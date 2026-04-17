@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | Traders IQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 p-8">
+    <div class="max-w-3xl mx-auto bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
+        <h1 class="text-3xl font-black mb-6">Privacy Policy</h1>
+        <p class="mb-4 text-sm text-slate-500 italic">Last Updated: April 2026</p>
+        
+        <div class="space-y-6 text-sm leading-relaxed">
+            <section>
+                <h2 class="text-lg font-bold text-slate-900 mb-2">1. Data Collection</h2>
+                <p>We collect basic information such as your email address through Firebase Authentication to manage your account and subscription access.</p>
+            </section>
+            <section>
+                <h2 class="text-lg font-bold text-slate-900 mb-2">2. Usage Data</h2>
+                <p>Trading data logs (PnL, notes) are stored securely in Google Firebase. We do not share your private trading data with any third parties.</p>
+            </section>
+            <section>
+                <h2 class="text-lg font-bold text-slate-900 mb-2">3. Payments</h2>
+                <p>Payment processing is handled by Lemon Squeezy. We do not store your credit card or bank details on our servers.</p>
+            </section>
+            <p class="mt-10 pt-6 border-t font-bold text-center text-slate-400">Traders IQ • Adhikari Official</p>
+        </div>
+    </div>
+</body>
+</html>
