@@ -69,7 +69,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
-        /* Custom Notification Toast Style */
         .elite-toast {
             position: fixed;
             top: 20px;
@@ -160,15 +159,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Custom Toast Notification
         window.showToast = function(msg) {
             const toast = document.getElementById('eliteToast');
             const message = document.getElementById('toastMessage');
             message.textContent = msg;
             toast.style.display = 'flex';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 4000);
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
         };
 
         const firebaseConfig = { 
@@ -184,7 +180,6 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        // Google Auth Redirect Result
         getRedirectResult(auth).then((result) => {
             if (result?.user) {
                 window.location.href = 'payment.html';
@@ -193,37 +188,23 @@
             showToast(error.message);
         });
 
-        // Email & Password Signup Logic
         document.getElementById("signupBtn").onclick = () => {
             const email = document.getElementById("email").value;
             const pass = document.getElementById("password").value;
-            
-            if(!email || !pass) {
-                showToast("Please fill all details");
-                return;
-            }
+            if(!email || !pass) { showToast("Please fill all details"); return; }
 
             createUserWithEmailAndPassword(auth, email, pass)
                 .then((userCredential) => {
-                    // Send Verification Email
-                    sendEmailVerification(userCredential.user)
-                        .then(() => {
-                            showToast("Verification link sent! Check your Gmail.");
-                            
-                            // Sign out so user can't access dashboard without verification
-                            signOut(auth).then(() => {
-                                setTimeout(() => {
-                                    window.location.href = "login.html";
-                                }, 3000);
-                            });
+                    sendEmailVerification(userCredential.user).then(() => {
+                        showToast("Verification link sent! Check your Gmail.");
+                        signOut(auth).then(() => {
+                            setTimeout(() => { window.location.href = "login.html"; }, 3000);
                         });
+                    });
                 })
-                .catch(err => {
-                    showToast(err.message);
-                });
+                .catch(err => { showToast(err.message); });
         };
 
-        // Google Auth Logic
         document.getElementById("googleBtn").onclick = () => {
             signInWithRedirect(auth, provider);
         };
