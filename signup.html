@@ -158,7 +158,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // Custom Toast Notification
         window.showToast = function(msg) {
@@ -173,7 +173,7 @@
 
         const firebaseConfig = { 
             apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
-            authDomain: "traders-iq-app-f5169.firebaseapp.com", 
+            authDomain: "tradersiq.xyz", // Updated to your custom domain
             projectId: "traders-iq-app-f5169", 
             storageBucket: "traders-iq-app-f5169.firebasestorage.app", 
             messagingSenderId: "411253913617", 
@@ -210,8 +210,8 @@
                         .then(() => {
                             showToast("Verification link sent! Check your Gmail.");
                             
-                            // Sign out so user can't access dashboard without verification
-                            auth.signOut().then(() => {
+                            // Prevent auto-redirect by signing out
+                            signOut(auth).then(() => {
                                 setTimeout(() => {
                                     window.location.href = "login.html";
                                 }, 3000);
@@ -229,4 +229,5 @@
         };
     </script>
 </body>
-</html>
+    </html>
+                
