@@ -152,7 +152,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        // sendEmailVerification yahan add kiya gaya hai
+        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         window.showToast = function(msg) {
             const toast = document.getElementById('eliteToast');
@@ -175,17 +176,15 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        // Check if user is returning from Google Redirect
         getRedirectResult(auth).then((result) => {
             if (result?.user) {
+                // Google se login ke waqt verification ki zarurat nahi hoti (Google khud verified hota hai)
                 window.location.href = 'payment.html';
             }
         }).catch((error) => {
             showToast(error.message);
         });
 
-        // Ab ye page-load par auto-redirect nahi karega
-        // Redirect sirf signup success hone par hi hoga
         document.getElementById("signupBtn").onclick = () => {
             const email = document.getElementById("email").value;
             const pass = document.getElementById("password").value;
@@ -196,8 +195,20 @@
             }
 
             createUserWithEmailAndPassword(auth, email, pass)
-                .then(() => {
-                    window.location.href = "payment.html";
+                .then((userCredential) => {
+                    // 1. Verification email bhej rahe hain
+                    sendEmailVerification(userCredential.user)
+                        .then(() => {
+                            showToast("Verification link sent! Check your real Gmail.");
+                            
+                            // 2. Turant logout karna zaroori hai taaki dashboard access na ho
+                            auth.signOut().then(() => {
+                                // 3. 3 second baad login page par redirect
+                                setTimeout(() => {
+                                    window.location.href = "login.html";
+                                }, 3000);
+                            });
+                        });
                 })
                 .catch(err => {
                     showToast(err.message);
