@@ -158,7 +158,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
         // Reusable Toast Function
@@ -174,7 +174,7 @@
 
         const firebaseConfig = {
             apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
-            authDomain: "traders-iq-app-f5169.firebaseapp.com",
+            authDomain: "tradersiq.xyz", // Updated to your custom domain
             projectId: "traders-iq-app-f5169",
             storageBucket: "traders-iq-app-f5169.firebasestorage.app",
             messagingSenderId: "411253913617",
@@ -190,6 +190,8 @@
             if (user) {
                 if (!user.emailVerified) {
                     showToast("Account verification required. Please check your email.");
+                    // Force logout to prevent unauthorized access
+                    signOut(auth);
                     return;
                 }
 
