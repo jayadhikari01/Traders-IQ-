@@ -157,7 +157,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
         window.showToast = function(msg) {
@@ -182,14 +182,24 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
+        getRedirectResult(auth).then((result) => {
+            if (result?.user) {
+                // Verified check same logic as email login
+                if (result.user.emailVerified) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    window.location.href = 'payment.html';
+                }
+            }
+        }).catch((error) => { showToast(error.message); });
+
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
+            if (user && !window.location.search.includes('redirect')) {
                 if (!user.emailVerified) {
                     showToast("Account verification required. Please check your email.");
                     signOut(auth);
                     return;
                 }
-
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists() && userDoc.data().isPro === true) {
                     window.location.href = 'dashboard.html'; 
@@ -199,27 +209,16 @@
             }
         });
 
-        document.getElementById("forgotBtn").onclick = () => {
-            window.location.href = "forgot-password.html";
-        };
+        document.getElementById("forgotBtn").onclick = () => { window.location.href = "forgot-password.html"; };
 
         document.getElementById("loginBtn").onclick = () => {
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
-
-            if(!email || !password) {
-                showToast("Credentials required for access.");
-                return;
-            }
-
-            signInWithEmailAndPassword(auth, email, password).catch(err => {
-                showToast(err.message);
-            });
+            if(!email || !password) { showToast("Credentials required."); return; }
+            signInWithEmailAndPassword(auth, email, password).catch(err => { showToast(err.message); });
         };
 
-        document.getElementById("googleBtn").onclick = () => {
-            signInWithRedirect(auth, provider);
-        };
+        document.getElementById("googleBtn").onclick = () => { signInWithRedirect(auth, provider); };
     </script>
 </body>
 </html>
