@@ -180,6 +180,7 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
+        // Ye code Google se wapas aane wale result ko handle karega
         getRedirectResult(auth).then((result) => {
             if (result?.user) {
                 window.location.href = 'payment.html';
@@ -195,12 +196,13 @@
 
             createUserWithEmailAndPassword(auth, email, pass)
                 .then((userCredential) => {
-                    sendEmailVerification(userCredential.user).then(() => {
-                        showToast("Verification link sent! Check your Gmail.");
-                        signOut(auth).then(() => {
-                            setTimeout(() => { window.location.href = "login.html"; }, 3000);
+                    sendEmailVerification(userCredential.user)
+                        .then(() => {
+                            showToast("Verification link sent! Check your Gmail.");
+                            signOut(auth).then(() => {
+                                setTimeout(() => { window.location.href = "login.html"; }, 3000);
+                            });
                         });
-                    });
                 })
                 .catch(err => { showToast(err.message); });
         };
