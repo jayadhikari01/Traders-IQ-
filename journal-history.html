@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traders IQ – Journal History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body{background:#F1F5F9;font-family: 'Inter', sans-serif;}
+        .card-gradient{background:linear-gradient(135deg,#4F46E5 0%,#3730A3 100%)}
+        .filter-btn { transition: all 0.2s; white-space: nowrap; border: 1px solid #E2E8F0; font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 10px 20px; border-radius: 99px; background: white; color: #94A3B8; }
+        .filter-btn.active{background:#4F46E5;color:white;border-color:#4F46E5}
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .app-card { background: #FFFFFF; border-radius: 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #E2E8F0; position: relative; }
+        .btn-ex { padding: 10px 14px; border-radius: 14px; font-size: 9px; font-weight: 900; text-transform: uppercase; color: white; }
+        .overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(10px);z-index:1000;align-items:center;justify-content:center}
+        .modal-content{background:#fff;border-radius:28px;padding:24px;width:90%;max-width:320px;text-align:center}
+        .search-container { position: relative; width: 100%; }
+        .search-input { width: 100%; background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 12px 48px 12px 16px; font-size: 12px; font-weight: 700; outline: none; }
+        .search-icon-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #4F46E5; color: white; padding: 8px; border-radius: 12px; cursor: pointer; }
+        .del-btn { position: absolute; top: 20px; right: 20px; color: #FDA4AF; cursor: pointer; padding: 5px; }
+        
+        .goto-box {
+            background: #FFFFFF; border: 1px solid #E2E8F0; padding: 8px 16px; border-radius: 16px;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .gate-pill {
+            font-size: 8px; font-weight: 900; text-transform: uppercase; padding: 4px 12px; border-radius: 10px;
+            background: #EEF2FF; color: #4F46E5; border: 1px solid #E0E7FF; letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body class="p-4 pb-24">
+
+<div class="max-w-md mx-auto" id="pdfContent">
+    <div class="flex justify-between items-center mb-6 px-1">
+        <div class="flex flex-col">
+            <a href="journal.html" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest no-export mb-1">← Back to Journal</a>
+            <h1 class="text-xl font-black text-slate-800 italic uppercase">Journal History</h1>
+        </div>
+        <div class="flex gap-2 no-export">
+            <button onclick="exportCSV()" class="btn-ex bg-emerald-500 shadow-sm">CSV</button>
+            <button onclick="exportPDF()" class="btn-ex bg-indigo-600 shadow-sm">PDF</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="card-gradient p-5 rounded-[28px] text-white shadow-xl">
+            <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Total PNL</p>
+            <h2 id="totalPNL" class="text-2xl font-black italic">0.00</h2>
+        </div>
+        <div class="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm">
+            <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Win Rate</p>
+            <h2 id="winRate" class="text-2xl font-black text-slate-800">0%</h2>
+        </div>
+    </div>
+
+    <div class="no-export mb-6 px-1">
+        <div class="search-container mb-4">
+            <input type="text" id="assetSearch" oninput="triggerSearch()" placeholder="Search instrument..." class="search-input">
+            <div class="search-icon-btn">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+        </div>
+        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button onclick="filterTrades('ALL')" id="fALL" class="filter-btn active">All</button>
+            <button onclick="filterTrades('WIN')" id="fWIN" class="filter-btn">Wins</button>
+            <button onclick="filterTrades('LOSS')" id="fLOSS" class="filter-btn">Losses</button>
+            <button onclick="filterTrades('BE')" id="fBE" class="filter-btn">B.E</button>
+        </div>
+    </div>
+
+    <div id="tradesList" class="space-y-4"></div>
+
+    <div class="mt-10 flex flex-col items-center gap-4 no-export">
+        <div class="flex items-center gap-4">
+            <button onclick="prevPage()" class="p-4 bg-white rounded-2xl border border-slate-100 text-[10px] font-black uppercase text-slate-400 shadow-sm">Prev</button>
+            <div class="goto-box">
+                <input type="number" id="pageJump" value="1" min="1" onchange="jumpToPage(this.value)" class="w-12 bg-indigo-50 py-1 rounded-lg text-[11px] font-black text-indigo-600 text-center outline-none border border-indigo-100">
+            </div>
+            <button onclick="nextPage()" class="p-4 bg-white rounded-2xl border border-slate-100 text-[10px] font-black uppercase text-slate-400 shadow-sm">Next</button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteModal" class="overlay">
+    <div class="modal-content">
+        <h3 class="text-lg font-black text-slate-800 uppercase italic mb-2">Delete Trade?</h3>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeDeleteModal()" class="flex-1 py-3 bg-slate-100 text-slate-400 text-[10px] font-black uppercase rounded-2xl">Cancel</button>
+            <button id="confirmDeleteBtn" class="flex-1 py-3 bg-rose-500 text-white text-[10px] font-black uppercase rounded-2xl shadow-lg">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+        authDomain: "traders-iq-app-f5169.firebaseapp.com",
+        projectId: "traders-iq-app-f5169",
+        storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+        messagingSenderId: "411253913617",
+        appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.syncWithCloud = async function() {
+        const userId = localStorage.getItem('traders_iq_userid') || "user_123";
+        try {
+            const docSnap = await getDoc(doc(db, "users", userId));
+            let cloudData = [];
+            if (docSnap.exists()) {
+                cloudData = docSnap.data().trades || [];
+                localStorage.setItem('traders_iq_data', JSON.stringify(cloudData));
+            } else {
+                cloudData = JSON.parse(localStorage.getItem('traders_iq_data')) || [];
+            }
+
+            // Sorting: Naye trades ko top pe rakhne ke liye date wise sort (Descending)
+            allTrades = cloudData.sort((a, b) => {
+                return new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp);
+            });
+
+        } catch (e) {
+            allTrades = (JSON.parse(localStorage.getItem('traders_iq_data')) || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+        renderTrades();
+        updateStats();
+    };
+
+    window.updateCloud = async function(data) {
+        const userId = localStorage.getItem('traders_iq_userid') || "user_123";
+        try { await setDoc(doc(db, "users", userId), { trades: data }, { merge: true }); } catch (e) {}
+    };
+
+    window.onload = () => { syncWithCloud(); };
+</script>
+
+<script>
+    let allTrades = [];
+    let currentFilter = 'ALL';
+    let searchQuery = '';
+    let currentPage = 1;
+    let tradeToDeleteIndex = null;
+    const tradesPerPage = 10;
+
+    // Timezone formatted date display
+    function formatToLocal(dateStr) {
+        if(!dateStr) return '---';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function getFilteredData() {
+        return allTrades.filter(t => {
+            const matchesOutcome = currentFilter === 'ALL' || t.outcome === currentFilter;
+            const market = (t.instrument || "").toLowerCase();
+            return matchesOutcome && market.includes(searchQuery.toLowerCase());
+        });
+    }
+
+    function renderTrades() {
+        const container = document.getElementById('tradesList');
+        const filtered = getFilteredData();
+        const start = (currentPage - 1) * tradesPerPage;
+        const paginated = filtered.slice(start, start + tradesPerPage);
+        document.getElementById('pageJump').value = currentPage;
+
+        if (paginated.length === 0) {
+            container.innerHTML = `<div class="text-center py-20 text-slate-300 font-black uppercase text-[10px] tracking-widest italic">No trades found</div>`;
+            return;
+        }
+
+        container.innerHTML = paginated.map((t, idx) => {
+            const pnlValue = parseFloat(t.pnl) || 0;
+            const gates = t.disciplineGates || [];
+
+            return `
+            <div class="app-card p-5 bg-white">
+                <div class="del-btn no-export" onclick="openDeleteModal(${start + idx})">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </div>
+                <div class="mb-2">
+                    <span class="font-black ${t.direction === 'BUY' ? 'text-emerald-500' : 'text-red-500'} uppercase text-sm italic tracking-tighter">${t.direction || ''} ${t.instrument || ''}</span>
+                    <span class="ml-2 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${t.outcome === 'WIN' ? 'bg-emerald-100 text-emerald-600' : (t.outcome === 'BE' ? 'bg-slate-100 text-slate-600' : 'bg-red-100 text-red-600')} tracking-widest">${t.outcome}</span>
+                </div>
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-[8px] font-black text-slate-300 uppercase">${formatToLocal(t.date)}</p>
+                    <p class="text-[8px] font-black text-indigo-400 uppercase tracking-wider">${t.session || ''}</p>
+                </div>
+                ${t.screenshot ? `<img src="${t.screenshot}" class="w-full h-44 object-cover rounded-xl mb-4 border border-slate-50 shadow-sm">` : ''}
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <div class="text-[7px] font-black text-slate-400 uppercase">PNL<p class="text-[9px] font-bold ${pnlValue >= 0 ? 'text-emerald-500' : 'text-red-500'} uppercase italic">$${t.pnl}</p></div>
+                    <div class="text-[7px] font-black text-slate-400 uppercase">Emotion<p class="text-[9px] font-bold text-slate-700 uppercase truncate">${t.psychology || '-'}</p></div>
+                    <div class="text-[7px] font-black text-slate-400 uppercase">RR<p class="text-[9px] font-black text-slate-900 uppercase">${t.rr || '0'}R</p></div>
+                    <div class="text-[7px] font-black text-slate-400 uppercase">Entry<p class="text-[9px] font-bold text-slate-700 uppercase">${t.entryTime || '--:--'}</p></div>
+                </div>
+                <div class="flex flex-wrap gap-1.5 mb-3">
+                    ${gates.map(g => `<span class="gate-pill">${g}</span>`).join('')}
+                </div>
+                ${t.lesson ? `<div class="p-3 bg-slate-50 rounded-xl border border-slate-100"><p class="text-[9px] text-slate-600 italic font-medium">"${t.lesson}"</p></div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // Modal Control
+    function openDeleteModal(idx) { tradeToDeleteIndex = idx; document.getElementById('deleteModal').style.display = 'flex'; }
+    function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; }
+    
+    document.getElementById('confirmDeleteBtn').onclick = () => {
+        const filtered = getFilteredData();
+        const tradeToRemove = filtered[tradeToDeleteIndex];
+        
+        // Remove from main list
+        allTrades = allTrades.filter(t => t !== tradeToRemove);
+        
+        // Save back (list is already sorted)
+        localStorage.setItem('traders_iq_data', JSON.stringify(allTrades));
+        if(window.updateCloud) window.updateCloud(allTrades);
+        
+        closeDeleteModal(); updateStats(); renderTrades();
+    };
+
+    function updateStats() {
+        const filtered = getFilteredData();
+        const wins = filtered.filter(t => t.outcome === 'WIN').length;
+        document.getElementById('winRate').innerText = (filtered.length > 0 ? Math.round((wins / filtered.length) * 100) : 0) + '%';
+        const pnl = filtered.reduce((acc, curr) => acc + (parseFloat(curr.pnl) || 0), 0).toFixed(2);
+        document.getElementById('totalPNL').innerText = (parseFloat(pnl) >= 0 ? '+' : '') + pnl;
+    }
+
+    // CSV/PDF Export
+    function exportCSV() {
+        const ws = XLSX.utils.json_to_sheet(allTrades.map(t => ({...t, date: formatToLocal(t.date)})));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Journal");
+        XLSX.writeFile(wb, "TradersIQ_Export.xlsx");
+    }
+
+    function exportPDF() {
+        const element = document.getElementById('pdfContent');
+        html2pdf().set({ margin: 10, filename: 'My_Journal.pdf', html2canvas: { scale: 2 }, jsPDF: { format: 'a4' } }).from(element).save();
+    }
+
+    function triggerSearch() { searchQuery = document.getElementById('assetSearch').value; currentPage = 1; updateStats(); renderTrades(); }
+    function filterTrades(f) { currentFilter = f; currentPage = 1; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.getElementById('f'+f).classList.add('active'); updateStats(); renderTrades(); }
+    function jumpToPage(v) { let p = parseInt(v); if(p>0 && p<=Math.ceil(getFilteredData().length/tradesPerPage)) { currentPage=p; renderTrades(); }}
+    function prevPage(){ if(currentPage > 1) { currentPage--; renderTrades(); } }
+    function nextPage(){ if(currentPage < Math.ceil(getFilteredData().length/tradesPerPage)) { currentPage++; renderTrades(); } }
+</script>
+</body>
+</html>

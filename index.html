@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traders IQ | The Elite Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            background: #fdfdff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        /* 2026 High-End Mesh Background */
+        .mesh-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(34, 211, 238, 0.1) 0px, transparent 50%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #0f172a 0%, #4338ca 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .company-underline {
+            position: relative;
+            display: inline-block;
+        }
+        .company-underline::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -4px;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #6366f1, #ec4899);
+            border-radius: 2px;
+        }
+
+        .bento-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 2.5rem;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bento-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 40px 80px -20px rgba(99, 102, 241, 0.15);
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+            color: white;
+            transition: all 0.4s ease;
+            box-shadow: 0 20px 40px -10px rgba(67, 56, 202, 0.4);
+        }
+
+        .btn-premium:hover {
+            transform: scale(1.05);
+            box-shadow: 0 25px 50px -12px rgba(67, 56, 202, 0.6);
+        }
+
+        .nav-pill {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 2rem;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="mesh-container"></div>
+
+    <nav class="fixed top-6 w-full z-50 px-6">
+        <div class="max-w-6xl mx-auto nav-pill px-6 py-4 flex justify-between items-center shadow-lg border-white/40">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                    <span class="text-white font-black text-xs uppercase">IQ</span>
+                </div>
+                <div>
+                    <h2 class="text-base font-black tracking-tighter leading-none text-slate-900">TRADERS IQ</h2>
+                    <p class="text-[7px] font-bold text-indigo-500 tracking-[0.3em] uppercase mt-1">Adhikari Official</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 sm:gap-8">
+                <button onclick="window.location.href='login.html'" class="text-[11px] font-black tracking-widest text-slate-500 hover:text-indigo-600 uppercase">Login</button>
+                <button onclick="window.location.href='signup.html'" class="btn-premium px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest">Join Now</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-48 pb-20 px-6">
+        <div class="max-w-6xl mx-auto text-center">
+            <div class="animate-float inline-flex items-center gap-2 px-5 py-2 rounded-2xl bg-white/80 border border-slate-100 shadow-sm mb-12">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                <span class="text-[10px] font-bold tracking-[0.2em] text-indigo-600 uppercase">Engineered for Elites</span>
+            </div>
+
+            <h1 class="gradient-text text-6xl md:text-9xl mb-10 pb-4 leading-[1.1] font-extrabold tracking-tighter">
+                Precision is <br> Everything.
+            </h1>
+
+            <p class="text-slate-500 text-lg md:text-2xl max-w-4xl mx-auto mb-16 font-medium leading-relaxed">
+                Ordinary traders guess. <span class="text-indigo-600 font-extrabold italic">Elites use Traders IQ.</span><br>
+                Official Ecosystem developed by <span class="company-underline text-indigo-600 font-black">ADHIKARI OFFICIAL</span>.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <button onclick="window.location.href='signup.html'" class="btn-premium px-14 py-6 rounded-3xl font-black text-[14px] uppercase tracking-widest w-full sm:w-auto">
+                    Get Started
+                </button>
+                <button onclick="window.location.href='login.html'" class="bg-white border-2 border-slate-100 text-slate-900 px-14 py-6 rounded-3xl font-black text-[14px] uppercase tracking-widest hover:border-indigo-600 transition-all w-full sm:w-auto">
+                    Open Terminal
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-40 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-6 gap-6 px-4">
+            <div class="bento-card md:col-span-4 p-12 group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="w-16 h-16 bg-indigo-600 rounded-3xl flex items-center justify-center mb-10 shadow-xl shadow-indigo-100 group-hover:rotate-6 transition-transform">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        </div>
+                        <h3 class="text-4xl font-black mb-4 tracking-tighter">Smart PnL Analytics</h3>
+                        <p class="text-slate-500 font-semibold text-lg leading-relaxed max-w-md">Auto-calculated Win Rate & profit targets. Real-time data visualization that feels like the future.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bento-card md:col-span-2 p-10 group bg-gradient-to-br from-white to-rose-50/30">
+                <div class="w-14 h-14 bg-rose-500 rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-rose-100">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <h3 class="text-2xl font-black mb-3 tracking-tight">Cloud Safe Sync</h3>
+                <p class="text-slate-500 font-medium text-sm leading-relaxed">Secure Firebase integration. Your journal, synced globally.</p>
+            </div>
+
+            <div class="bento-card md:col-span-2 p-10 group bg-gradient-to-br from-white to-indigo-50/30">
+                <div class="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-amber-100">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                </div>
+                <h3 class="text-2xl font-black mb-3 tracking-tight">Global Leaderboard</h3>
+                <p class="text-slate-500 font-medium text-sm leading-relaxed">Unlock 100+ achievement badges and climb the global ranks.</p>
+            </div>
+
+            <div class="bento-card md:col-span-4 p-12 group">
+                <div class="flex flex-col md:flex-row gap-10 items-center">
+                    <div class="flex-1 text-center md:text-left">
+                        <div class="w-16 h-16 bg-slate-900 rounded-3xl flex items-center justify-center mb-8 mx-auto md:mx-0 shadow-2xl">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        </div>
+                        <h3 class="text-4xl font-black mb-4 tracking-tighter">Market Psychology</h3>
+                        <p class="text-slate-500 font-semibold text-lg leading-relaxed">Advanced gauge tools to master emotional discipline. Trade with logic.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-40 bg-[#0f172a] text-white pt-24 pb-12 rounded-t-[4rem] relative overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-indigo-600/20 blur-[120px]"></div>
+        <div class="max-w-7xl mx-auto px-8 relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
+                <div class="col-span-1 lg:col-span-1">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20">
+                            <span class="text-white font-black text-sm">IQ</span>
+                        </div>
+                        <h2 class="text-xl font-black tracking-tighter">TRADERS IQ</h2>
+                    </div>
+                    <p class="text-slate-400 font-medium text-sm leading-relaxed mb-6">The ultimate terminal for high-performance traders. Built for precision, security, and global competition.</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-indigo-400 font-black text-[10px] tracking-[0.3em] uppercase mb-8">Legal</h4>
+                    <div class="flex flex-col gap-4">
+                        <a href="privacy.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Privacy Policy</a>
+                        <a href="terms.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Terms of Service</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-indigo-400 font-black text-[10px] tracking-[0.3em] uppercase mb-8">Official</h4>
+                    <p class="text-slate-300 text-sm font-black mb-2 uppercase">Adhikari Official</p>
+                    <p class="text-slate-500 text-xs font-medium">Uttarakhand, India</p>
+                </div>
+            </div>
+            <div class="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                <p class="text-slate-500 text-[10px] font-black tracking-[0.4em] uppercase">© 2026 TRADERS IQ • THE GOLD STANDARD</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+            authDomain: "traders-iq-app-f5169.firebaseapp.com",
+            projectId: "traders-iq-app-f5169",
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+            messagingSenderId: "411253913617",
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0",
+            measurementId: "G-6LX6KBFVQF"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const analytics = getAnalytics(app);
+
+        // User login check
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>

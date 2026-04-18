@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Settings | Traders IQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { background-color: #F8FAFC; font-family: 'Plus Jakarta Sans', sans-serif; color: #0F172A; }
+        .glass-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 2rem; }
+        .input-field { background: #F1F5F9; border: 2px solid transparent; border-radius: 1rem; padding: 12px 16px; width: 100%; font-weight: 600; outline: none; transition: all 0.2s; }
+        .input-field:focus { border-color: #6366F1; background: #FFFFFF; }
+        
+        /* Modal Styles */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: white; width: 100%; max-width: 400px; border-radius: 2.5rem; padding: 40px; transform: scale(0.9); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .modal-overlay.active { display: flex; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+    </style>
+</head>
+<body class="antialiased pb-20">
+
+    <div id="resetModal" class="modal-overlay">
+        <div class="modal-content text-center">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </div>
+            <h3 class="text-xl font-black mb-2 uppercase italic text-slate-900">Email Dispatched!</h3>
+            <p class="text-slate-500 text-sm font-medium mb-8">Bhai, password reset link aapki email par bhej diya gaya hai. Inbox check karo.</p>
+            <button onclick="closeModal('resetModal')" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all">Got it</button>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-black mb-2 uppercase text-rose-600 italic">Security Lock</h3>
+            <p class="text-slate-500 text-sm font-medium mb-6">Security ke liye apna password enter karein taaki hum account terminate kar sakein.</p>
+            
+            <input type="password" id="verifyPassword" class="input-field mb-6" placeholder="Enter Login Password">
+            
+            <div class="flex flex-col gap-3">
+                <button id="confirmDeleteBtn" class="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-100 hover:bg-rose-700 transition-all">Terminate Account</button>
+                <button onclick="closeModal('deleteModal')" class="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="max-w-5xl mx-auto mt-8 px-6">
+        <div class="bg-white/90 backdrop-blur-xl p-4 flex justify-between items-center rounded-3xl border border-slate-100 shadow-sm">
+            <button onclick="window.location.href='profile.html'" class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 transition-all group">
+                <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+                Profile
+            </button>
+            
+            <div class="text-center">
+                <h1 class="text-[11px] font-black tracking-[0.3em] text-slate-900 uppercase italic">Control Center</h1>
+                <p class="text-[7px] font-bold text-indigo-500 uppercase tracking-widest">Traders IQ • Adhikari Official</p>
+            </div>
+            
+            <div class="w-16"></div> </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto mt-12 px-6 space-y-8">
+        
+        <div class="glass-card p-8 md:p-10">
+            <div class="flex items-center gap-4 mb-8 border-b border-slate-50 pb-6">
+                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <h2 class="text-xl font-black tracking-tight uppercase italic">Elite Access</h2>
+            </div>
+            
+            <div class="bg-slate-50 rounded-2xl p-6 flex justify-between items-center border border-slate-100">
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Status</p>
+                    <h3 class="text-lg font-black text-indigo-600 uppercase">Pro Trader Active</h3>
+                </div>
+                <button onclick="window.location.href='https://app.lemonsqueezy.com/my-orders'" class="px-8 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:scale-105 transition-all">Manage Billing</button>
+            </div>
+        </div>
+
+        <div class="glass-card p-8 md:p-10">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <h2 class="text-xl font-black tracking-tight uppercase italic">Security Hub</h2>
+            </div>
+            
+            <div class="flex items-center justify-between py-6 border-b border-slate-50">
+                <div>
+                    <h4 class="font-black text-sm uppercase">Secure Password</h4>
+                    <p class="text-xs text-slate-400 font-medium">Update credentials via encrypted email link</p>
+                </div>
+                <button id="sendResetBtn" class="px-8 py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all">Send Link</button>
+            </div>
+
+            <div class="flex items-center justify-between py-6">
+                <div>
+                    <h4 class="font-black text-sm uppercase text-rose-600">Delete Account</h4>
+                    <p class="text-xs text-slate-400 font-medium italic">Remove all trade data and profiles permanently</p>
+                </div>
+                <button onclick="openModal('deleteModal')" class="px-8 py-4 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Terminate</button>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, deleteUser } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+            authDomain: "traders-iq-app-f5169.firebaseapp.com",
+            projectId: "traders-iq-app-f5169",
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+            messagingSenderId: "411253913617",
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Modal Controls
+        window.openModal = (id) => document.getElementById(id).classList.add('active');
+        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+
+        // Reset Password
+        document.getElementById('sendResetBtn').onclick = async () => {
+            if(auth.currentUser) {
+                try {
+                    await sendPasswordResetEmail(auth, auth.currentUser.email);
+                    openModal('resetModal');
+                } catch (err) { alert(err.message); }
+            }
+        };
+
+        // Secure Delete with Password Verification
+        document.getElementById('confirmDeleteBtn').onclick = async () => {
+            const password = document.getElementById('verifyPassword').value;
+            if(!password) { alert("Bhai, password toh daalo!"); return; }
+
+            const user = auth.currentUser;
+            const credential = EmailAuthProvider.credential(user.email, password);
+            const btn = document.getElementById('confirmDeleteBtn');
+            
+            btn.innerText = "VERIFYING...";
+            btn.disabled = true;
+
+            try {
+                // Critical step: Re-verify before data wipe
+                await reauthenticateWithCredential(user, credential);
+                
+                // Wipe Firestore Document
+                await deleteDoc(doc(db, "users", user.uid));
+                
+                // Remove Auth User
+                await deleteUser(user);
+                
+                window.location.href = 'index.html';
+            } catch (err) {
+                alert("Auth Failed: Incorrect password or session timeout.");
+                btn.innerText = "TERMINATE ACCOUNT";
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

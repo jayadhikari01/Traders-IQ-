@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traders IQ | Join the Elite - Signup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            background: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        .mesh-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #0f172a 0%, #4338ca 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bento-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+        }
+
+        .bento-input {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 1.25rem;
+            transition: all 0.3s ease;
+        }
+        .bento-input:focus {
+            border-color: #6366f1;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+            color: white;
+            transition: all 0.4s ease;
+            box-shadow: 0 20px 40px -10px rgba(67, 56, 202, 0.4);
+        }
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px -12px rgba(67, 56, 202, 0.6);
+        }
+
+        .glass-pill {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Custom Notification Toast Style */
+        .elite-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #0f172a;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col justify-center items-center p-4">
+    <div class="mesh-container"></div>
+
+    <div id="eliteToast" class="elite-toast">
+        <div class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+        <span id="toastMessage"></span>
+    </div>
+
+    <div class="max-w-4xl w-full flex flex-col items-center gap-8 py-10">
+        <div class="glass-pill px-8 py-3 flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                <span class="text-white font-black text-xs uppercase">IQ</span>
+            </div>
+            <h2 class="text-base font-black tracking-tighter leading-none text-slate-900">TRADERS IQ</h2>
+        </div>
+
+        <div class="bento-card p-10 md:p-12 w-full max-w-xl text-center">
+            <h1 class="gradient-text text-4xl md:text-5xl mb-2 font-extrabold tracking-tighter">
+                Create Account
+            </h1>
+            <p class="text-slate-400 text-sm mb-10 font-bold uppercase tracking-widest">Join the elite community</p>
+
+            <div class="space-y-5 text-left">
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Full Name</label>
+                    <input type="text" id="name" placeholder="John Doe" class="w-full bento-input p-4 text-sm font-semibold outline-none text-slate-900 mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Email Address</label>
+                    <input type="email" id="email" placeholder="email@example.com" class="w-full bento-input p-4 text-sm font-semibold outline-none text-slate-900 mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" class="w-full bento-input p-4 text-sm font-semibold outline-none text-slate-900 mt-1">
+                </div>
+                
+                <button id="signupBtn" class="w-full btn-premium py-5 rounded-3xl font-black text-xs uppercase tracking-widest mt-4">
+                    Start Trading
+                </button>
+
+                <button id="googleBtn" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 py-4 rounded-3xl font-bold text-slate-700 text-sm hover:bg-slate-50 transition-all">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5">
+                    Continue with Google
+                </button>
+            </div>
+
+            <p class="mt-10 text-sm text-slate-500 font-medium">Already a member? <a href="login.html" class="text-indigo-600 font-extrabold">Log In</a></p>
+        </div>
+
+        <div class="mt-10 text-center">
+            <h2 class="text-xl font-black tracking-widest text-slate-800 uppercase mb-2">Adhikari Official</h2>
+            <p class="text-slate-500 text-[9px] font-black tracking-[0.4em] uppercase">© 2026 TRADERS IQ • THE GOLD STANDARD</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        window.showToast = function(msg) {
+            const toast = document.getElementById('eliteToast');
+            const message = document.getElementById('toastMessage');
+            message.textContent = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        };
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
+            authDomain: "traders-iq-app-f5169.firebaseapp.com", 
+            projectId: "traders-iq-app-f5169", 
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app", 
+            messagingSenderId: "411253913617", 
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0" 
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Check if user is returning from Google Redirect
+        getRedirectResult(auth).then((result) => {
+            if (result?.user) {
+                window.location.href = 'payment.html';
+            }
+        }).catch((error) => {
+            showToast(error.message);
+        });
+
+        // Ab ye page-load par auto-redirect nahi karega
+        // Redirect sirf signup success hone par hi hoga
+        document.getElementById("signupBtn").onclick = () => {
+            const email = document.getElementById("email").value;
+            const pass = document.getElementById("password").value;
+            
+            if(!email || !pass) {
+                showToast("Please fill all details");
+                return;
+            }
+
+            createUserWithEmailAndPassword(auth, email, pass)
+                .then(() => {
+                    window.location.href = "payment.html";
+                })
+                .catch(err => {
+                    showToast(err.message);
+                });
+        };
+
+        document.getElementById("googleBtn").onclick = () => {
+            signInWithRedirect(auth, provider);
+        };
+    </script>
+</body>
+</html>
