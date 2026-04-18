@@ -173,7 +173,7 @@
 
         const firebaseConfig = { 
             apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
-            authDomain: "tradersiq.xyz", // Updated to your custom domain
+            authDomain: "traders-iq-app-f5169.firebaseapp.com", 
             projectId: "traders-iq-app-f5169", 
             storageBucket: "traders-iq-app-f5169.firebasestorage.app", 
             messagingSenderId: "411253913617", 
@@ -210,7 +210,7 @@
                         .then(() => {
                             showToast("Verification link sent! Check your Gmail.");
                             
-                            // Prevent auto-redirect by signing out
+                            // Sign out so user can't access dashboard without verification
                             signOut(auth).then(() => {
                                 setTimeout(() => {
                                     window.location.href = "login.html";
@@ -229,5 +229,4 @@
         };
     </script>
 </body>
-    </html>
-                
+</html>
