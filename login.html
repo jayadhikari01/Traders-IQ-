@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traders IQ | The Elite Terminal - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         
@@ -44,6 +45,7 @@
             border: 2px solid #e2e8f0;
             border-radius: 1.25rem;
             transition: all 0.3s ease;
+            width: 100%;
         }
         .bento-input:focus {
             border-color: #6366f1;
@@ -92,6 +94,21 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        /* Eye Icon Style */
+        .password-container {
+            position: relative;
+            width: 100%;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #64748b;
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen flex flex-col justify-center items-center p-4">
@@ -123,7 +140,10 @@
                 </div>
                 <div>
                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Secure Password</label>
-                    <input type="password" id="password" placeholder="••••••••" class="w-full bento-input p-4 text-sm font-semibold outline-none text-slate-900 mt-1">
+                    <div class="password-container">
+                        <input type="password" id="password" placeholder="••••••••" class="w-full bento-input p-4 text-sm font-semibold outline-none text-slate-900 mt-1">
+                        <i class="fa-solid fa-eye toggle-password" id="eyeIcon"></i>
+                    </div>
                 </div>
                 
                 <div class="text-right">
@@ -157,8 +177,22 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        // Eye Toggle Logic
+        const eyeIcon = document.getElementById('eyeIcon');
+        const passwordInput = document.getElementById('password');
+
+        eyeIcon.onclick = () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        };
 
         window.showToast = function(msg) {
             const toast = document.getElementById('eliteToast');
@@ -182,22 +216,10 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        getRedirectResult(auth).then((result) => {
-            if (result?.user) {
-                // Verified check same logic as email login
-                if (result.user.emailVerified) {
-                    window.location.href = 'dashboard.html';
-                } else {
-                    window.location.href = 'payment.html';
-                }
-            }
-        }).catch((error) => { showToast(error.message); });
-
         onAuthStateChanged(auth, async (user) => {
-            if (user && !window.location.search.includes('redirect')) {
+            if (user) {
                 if (!user.emailVerified) {
                     showToast("Account verification required. Please check your email.");
-                    signOut(auth);
                     return;
                 }
                 const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -221,4 +243,5 @@
         document.getElementById("googleBtn").onclick = () => { signInWithRedirect(auth, provider); };
     </script>
 </body>
-</html>
+    </html>
+    
