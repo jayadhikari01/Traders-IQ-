@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 
+// 1. Firebase Admin Setup
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -13,6 +14,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// Vercel config
 export const config = {
     api: { bodyParser: false },
 };
@@ -26,7 +28,10 @@ async function getRawBody(readable) {
 }
 
 module.exports = async (req, res) => {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+    // Sirf POST requests allow honge (Lemon Squeezy POST bhejta hai)
+    if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+    }
 
     try {
         const rawBody = await getRawBody(req);
@@ -36,7 +41,9 @@ module.exports = async (req, res) => {
         const hmac = crypto.createHmac('sha256', secret);
         const digest = hmac.update(rawBody).digest('hex');
 
+        // Security check
         if (!signature || signature !== digest) {
+            console.error('Signature Mismatch!');
             return res.status(401).send('Invalid signature');
         }
 
@@ -44,6 +51,9 @@ module.exports = async (req, res) => {
         const eventName = payload.meta.event_name;
         const userId = payload.meta.custom_data ? payload.meta.custom_data.user_id : null;
 
+        console.log(`Event: ${eventName} for User: ${userId}`);
+
+        // Update logic
         if (eventName === 'order_created' || eventName === 'subscription_created') {
             if (userId) {
                 await db.collection('users').doc(userId).update({
@@ -54,9 +64,10 @@ module.exports = async (req, res) => {
                 return res.status(200).send('Success');
             }
         }
-        res.status(200).send('Received');
+        res.status(200).send('Event Received');
     } catch (error) {
+        console.error('Webhook Error:', error);
         res.status(500).send(`Error: ${error.message}`);
     }
 };
-            
+        
