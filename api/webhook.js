@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import crypto from 'crypto';
 
-// 1. Initialize Firebase Admin
+// Firebase Setup
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -12,68 +12,9 @@ if (!admin.apps.length) {
     });
 }
 
-const db = admin.firestore();
-
 export default async function handler(req, res) {
-    // Only allow POST requests from Lemon Squeezy
     if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed - Please use POST');
+        return res.status(405).send('Server is Up! Please use POST for Webhooks.');
     }
-
-    try {
-        // 2. Read raw body for signature verification
-        const chunks = [];
-        for await (const chunk of req) {
-            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-        }
-        const rawBody = Buffer.concat(chunks);
-
-        // 3. Verify Signature
-        const secret = "TradersIQ_Secret_99";
-        const signature = req.headers['x-signature'];
-        const hmac = crypto.createHmac('sha256', secret);
-        const digest = hmac.update(rawBody).digest('hex');
-
-        if (!signature || signature !== digest) {
-            console.error('Invalid Signature');
-            return res.status(401).send('Invalid signature');
-        }
-
-        // 4. Parse Webhook Data
-        const payload = JSON.parse(rawBody.toString());
-        const eventName = payload.meta.event_name;
-        
-        // custom_data se user_id nikalna (jo aapne Checkout link mein bheja hoga)
-        const userId = payload.meta.custom_data ? payload.meta.custom_data.user_id : null;
-
-        console.log(`Event: ${eventName} for User: ${userId}`);
-
-        // 5. Update Firebase logic
-        if (eventName === 'order_created' || eventName === 'subscription_created') {
-            if (userId) {
-                await db.collection('users').doc(userId).set({
-                    isPro: true,
-                    planType: payload.data.attributes.variant_name || 'Premium',
-                    subscriptionId: payload.data.id,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                return res.status(200).send('User upgraded to Pro successfully');
-            }
-        }
-
-        return res.status(200).send('Webhook received');
-
-    } catch (error) {
-        console.error('Webhook Error:', error.message);
-        return res.status(500).send('Internal Server Error: ' + error.message);
-    }
+    return res.status(200).send('Success');
 }
-
-// Critical: Disable body parser for signature verification
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-                        
