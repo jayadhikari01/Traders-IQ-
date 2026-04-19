@@ -93,7 +93,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* Password Eye Icon Style */
         .password-container {
             position: relative;
             width: 100%;
@@ -174,10 +173,21 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendEmailVerification, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Eye Toggle Logic
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
+            authDomain: "traders-iq-app-f5169.firebaseapp.com", 
+            projectId: "traders-iq-app-f5169", 
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app", 
+            messagingSenderId: "411253913617", 
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0" 
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
         const eyeIcon = document.getElementById('eyeIcon');
         const passwordInput = document.getElementById('password');
-
         eyeIcon.onclick = () => {
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
@@ -196,35 +206,20 @@
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         };
 
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
-            authDomain: "traders-iq-app-f5169.firebaseapp.com", 
-            projectId: "traders-iq-app-f5169", 
-            storageBucket: "traders-iq-app-f5169.firebasestorage.app", 
-            messagingSenderId: "411253913617", 
-            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0" 
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-
-        // Stable Google Auth Redirect Handling
+        // Redirect Logic: Google User -> Direct Payment | Email User -> Verify First
         onAuthStateChanged(auth, (user) => {
-            if (user && user.emailVerified) {
-                window.location.href = 'payment.html';
+            if (user) {
+                const isGoogle = user.providerData.some(p => p.providerId === 'google.com');
+                if (isGoogle || user.emailVerified) {
+                    window.location.href = 'payment.html';
+                }
             }
         });
 
-        getRedirectResult(auth).then((result) => {
-            if (result?.user) { 
-                window.location.href = 'payment.html'; 
-            }
-        }).catch((error) => { 
+        getRedirectResult(auth).catch((error) => { 
             showToast(error.message); 
         });
 
-        // Email & Password Signup Logic (Strictly keeping verification)
         document.getElementById("signupBtn").onclick = () => {
             const email = document.getElementById("email").value;
             const pass = document.getElementById("password").value;
@@ -233,7 +228,6 @@
             createUserWithEmailAndPassword(auth, email, pass).then((userCredential) => {
                 sendEmailVerification(userCredential.user).then(() => {
                     showToast("Verification link sent! Check your Gmail.");
-                    // Force logout until verification is complete
                     signOut(auth).then(() => {
                         setTimeout(() => { window.location.href = "login.html"; }, 3000);
                     });
@@ -241,7 +235,6 @@
             }).catch(err => { showToast(err.message); });
         };
 
-        // Google Auth Trigger
         document.getElementById("googleBtn").onclick = () => { 
             signInWithRedirect(auth, provider); 
         };
