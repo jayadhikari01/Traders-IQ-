@@ -172,6 +172,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult, sendEmailVerification, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
@@ -184,6 +185,7 @@
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
         const eyeIcon = document.getElementById('eyeIcon');
@@ -207,26 +209,53 @@
         };
 
         // Redirect Logic: Google User -> Direct Payment | Email User -> Verify First
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const isGoogle = user.providerData.some(p => p.providerId === 'google.com');
+                
                 if (isGoogle || user.emailVerified) {
+                    // Create Firestore document if it doesn't exist (For Google users)
+                    const userRef = doc(db, "users", user.uid);
+                    const userSnap = await getDoc(userRef);
+
+                    if (!userSnap.exists()) {
+                        await setDoc(userRef, {
+                            name: user.displayName || document.getElementById('name').value || "Elite Trader",
+                            email: user.email,
+                            isPro: false,
+                            createdAt: new Date()
+                        });
+                    }
                     window.location.href = 'payment.html';
                 }
             }
         });
 
         getRedirectResult(auth).catch((error) => { 
-            showToast(error.message); 
+            if(error.code !== 'auth/redirect-cancelled-by-user') {
+                showToast(error.message);
+            }
         });
 
         document.getElementById("signupBtn").onclick = () => {
             const email = document.getElementById("email").value;
             const pass = document.getElementById("password").value;
-            if(!email || !pass) { showToast("Please fill all details"); return; }
+            const name = document.getElementById("name").value;
 
-            createUserWithEmailAndPassword(auth, email, pass).then((userCredential) => {
-                sendEmailVerification(userCredential.user).then(() => {
+            if(!email || !pass || !name) { showToast("Please fill all details"); return; }
+
+            createUserWithEmailAndPassword(auth, email, pass).then(async (userCredential) => {
+                const user = userCredential.user;
+                
+                // Create initial user document in Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    name: name,
+                    email: email,
+                    isPro: false,
+                    createdAt: new Date()
+                });
+
+                sendEmailVerification(user).then(() => {
                     showToast("Verification link sent! Check your Gmail.");
                     signOut(auth).then(() => {
                         setTimeout(() => { window.location.href = "login.html"; }, 3000);
