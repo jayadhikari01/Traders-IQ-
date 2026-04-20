@@ -23,13 +23,12 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        // Global variables for other scripts
         window.db = db;
         window.doc = doc;
         window.getDoc = getDoc;
         window.setDoc = setDoc;
         window.auth = auth;
-        window.serverTimestamp = serverTimestamp; // Added for timezone tracking
+        window.serverTimestamp = serverTimestamp;
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -56,8 +55,6 @@
             border-radius: 2.5rem; 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
         }
-
-        .timer-display { font-variant-numeric: tabular-nums; letter-spacing: -0.05em; font-weight: 800; }
         
         .btn-premium {
             background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
@@ -65,7 +62,6 @@
             box-shadow: 0 10px 20px -5px rgba(67, 56, 202, 0.4);
         }
 
-        .summary-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); display: none; }
         #confirmOverlay { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 24px; }
         
         .rule-checkbox { width: 24px; height: 24px; border-radius: 8px; border: 2px solid #e2e8f0; appearance: none; cursor: pointer; transition: all 0.2s; position: relative; flex-shrink: 0; background: #f1f5f9; }
@@ -108,14 +104,6 @@
             </button>
         </div>
 
-        <div class="glass-card p-8 mb-8 flex flex-col items-center">
-            <div id="timer" class="timer-display text-5xl text-slate-900 mb-8">00:00:00</div>
-            <div class="flex gap-3 w-full">
-                <button id="timerBtn" onclick="toggleTimer()" class="flex-1 btn-premium py-5 rounded-3xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all">Start Session</button>
-                <button onclick="resetTimer()" class="px-6 py-5 bg-slate-100 text-slate-500 rounded-3xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all">Reset</button>
-            </div>
-        </div>
-
         <div id="rulesList" class="space-y-4"></div>
 
         <div class="fixed bottom-8 left-0 right-0 px-6 max-w-md mx-auto z-40">
@@ -126,29 +114,12 @@
         </div>
     </div>
     
-    <div id="summaryModal" class="summary-overlay fixed inset-0 z-50 flex items-center justify-center p-6">
-        <div class="glass-card w-full max-w-sm p-10 text-center animate-in zoom-in duration-300">
-            <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tighter">Session Report</h2>
-            <div class="grid grid-cols-2 gap-4 mb-10">
-                <div class="bg-slate-50 p-5 rounded-[2rem] border-2 border-slate-100">
-                    <span class="text-[9px] font-black text-slate-400 block mb-2 uppercase tracking-widest">Time</span>
-                    <span id="sumTime" class="font-black text-slate-800 text-lg">00:00:00</span>
-                </div>
-                <div class="bg-slate-50 p-5 rounded-[2rem] border-2 border-slate-100">
-                    <span class="text-[9px] font-black text-slate-400 block mb-2 uppercase tracking-widest">Score</span>
-                    <span id="sumScore" class="font-black text-indigo-600 text-lg">0%</span>
-                </div>
-            </div>
-            <button onclick="closeSummary()" class="w-full py-5 bg-slate-900 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest">Confirm & Clear</button>
-        </div>
-    </div>
-
     <script type="module">
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
         
         const auth = getAuth();
         let currentUser = null;
-        let startTime, timerInterval, isRunning = false, ruleToDeleteIndex = null;
+        let ruleToDeleteIndex = null;
         let rulesData = [];
 
         onAuthStateChanged(auth, (user) => {
@@ -176,65 +147,22 @@
             renderRules();
         }
 
+        // Manual Save function: Only triggered by Save Button
         window.manualSave = async function() {
             if (!currentUser) return;
             
-            // Detecting user's local timezone automatically
             const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
             await window.setDoc(window.doc(window.db, "users", currentUser.uid), { 
                 rules: rulesData,
-                lastUpdated: window.serverTimestamp(), // Saves exact global time
-                userTimezone: userTimezone    // Saves user's current location timezone
+                lastUpdated: window.serverTimestamp(),
+                userTimezone: userTimezone
             }, { merge: true });
 
             const toast = document.getElementById('saveToast');
             toast.classList.add('active');
             setTimeout(() => toast.classList.remove('active'), 2000);
         }
-
-        window.toggleTimer = function() {
-            if (!isRunning) {
-                startTime = Date.now();
-                timerInterval = setInterval(() => {
-                    const now = Date.now();
-                    const diff = now - startTime;
-                    const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                    const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                    const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                    document.getElementById('timer').innerText = `${h}:${m}:${s}`;
-                }, 1000);
-                document.getElementById('timerBtn').innerText = "Stop Session";
-                document.getElementById('timerBtn').classList.replace('btn-premium', 'bg-rose-500');
-                isRunning = true;
-            } else {
-                showSummary();
-                resetTimer();
-            }
-        };
-
-        window.resetTimer = function() {
-            clearInterval(timerInterval);
-            isRunning = false;
-            document.getElementById('timer').innerText = "00:00:00";
-            document.getElementById('timerBtn').innerText = "Start Session";
-            document.getElementById('timerBtn').classList.replace('bg-rose-500', 'btn-premium');
-        };
-
-        function showSummary() {
-            const followed = rulesData.filter(r => r.checked).length;
-            const score = rulesData.length > 0 ? Math.round((followed / rulesData.length) * 100) : 0;
-            document.getElementById('sumTime').innerText = document.getElementById('timer').innerText;
-            document.getElementById('sumScore').innerText = `${score}%`;
-            document.getElementById('summaryModal').style.display = 'flex';
-        }
-
-        window.closeSummary = function() {
-            document.getElementById('summaryModal').style.display = 'none';
-            rulesData.forEach(r => r.checked = false);
-            window.manualSave();
-            renderRules();
-        };
 
         function renderRules() {
             const list = document.getElementById('rulesList');
@@ -259,14 +187,14 @@
             if (input.value.trim()) {
                 rulesData.push({ text: input.value.trim(), checked: false });
                 input.value = "";
-                window.manualSave();
+                // Note: Not saving to Firebase immediately
                 renderRules();
             }
         };
 
         window.toggleCheck = function(index) {
+            // Update local data state but do NOT call manualSave()
             rulesData[index].checked = !rulesData[index].checked;
-            window.manualSave();
         };
 
         window.requestDelete = function(index) {
@@ -283,11 +211,12 @@
         function executeDelete() {
             if (ruleToDeleteIndex !== null) {
                 rulesData.splice(ruleToDeleteIndex, 1);
-                window.manualSave();
+                // Note: Not saving to Firebase immediately
                 renderRules();
             }
             cancelDelete();
         }
     </script>
 </body>
-</html>
+                    </html>
+                
