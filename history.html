@@ -257,45 +257,48 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- EXCEL DOWNLOAD FIX (UNLIMITED & SL/TP ADDED) ---
+        // --- EXCEL DOWNLOAD FIX (UNLIMITED & SL/TP) ---
         window.downloadExcelFile = function() {
-            // Re-fetch latest data from localStorage to ensure sync
-            const currentTrades = JSON.parse(localStorage.getItem('lab_trades')) || [];
+            // Re-fetch fresh data from local storage every time
+            const latestTrades = JSON.parse(localStorage.getItem('lab_trades')) || [];
             
-            if (currentTrades.length === 0) { 
-                alert("No data to export!"); 
-                return; 
+            if (latestTrades.length === 0) {
+                alert("No data to export!");
+                return;
             }
 
             try {
-                const exportData = currentTrades.map(t => ({
+                // Formatting data for Excel
+                const dataToExport = latestTrades.map(t => ({
                     "Date": new Date(t.id).toLocaleDateString(),
                     "Asset": t.asset,
                     "Side": t.dir,
                     "Result": t.outcome,
-                    "SL": t.sl || '0',  // SL Added
-                    "TP": t.tp || '0',  // TP Added
-                    "RR": t.rr,
+                    "Stop Loss": t.sl || '0',
+                    "Take Profit": t.tp || '0',
+                    "Risk Reward": t.rr + 'R',
                     "Session": t.sess,
                     "Setup": t.setup,
-                    "Rules": t.rules ? t.rules.join(', ') : '',
+                    "Rules Violated": t.rules ? t.rules.join(', ') : 'None',
                     "Entry Time": formatDisplayTime(t.entry),
                     "Exit Time": formatDisplayTime(t.exit),
                     "Notes": t.notes || ''
                 }));
 
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Journal");
+                // Logic to handle multiple downloads
+                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Trades");
 
-                // Unique filename using timestamp to allow multiple downloads
-                const uniqueFileName = `TradersIQ_Journal_${Date.now()}.xlsx`;
-                
-                XLSX.writeFile(wb, uniqueFileName);
-                
+                // Generate a unique filename every time using timestamp
+                const filename = `TradersIQ_Journal_${new Date().getTime()}.xlsx`;
+
+                // Explicitly write and trigger download
+                XLSX.writeFile(workbook, filename);
+
             } catch (err) {
-                console.error("Excel Export Error:", err);
-                alert("Download failed. Please try again.");
+                console.error("Download error:", err);
+                alert("Download failed. Please refresh and try again.");
             }
         };
 
