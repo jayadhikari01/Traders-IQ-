@@ -6,7 +6,6 @@
     <title>Backtest History - Traders IQ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #F1F5F9; font-family: 'Inter', sans-serif; color: #1E293B; padding-bottom: 40px; -webkit-tap-highlight-color: transparent; }
@@ -52,20 +51,19 @@
 
     <div id="zoomOverlay" onclick="this.style.display='none'"><img id="zoomedImg" class="max-w-full max-h-full rounded-lg"></div>
 
-    <div class="max-w-md mx-auto p-5" id="pdfContent">
+    <div class="max-w-md mx-auto p-5" id="historyContent">
         
         <div class="flex justify-between items-center mb-6 mt-4">
             <div class="flex flex-col">
-                <a href="backtest-lab.html" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest no-export">← Back to Lab</a>
+                <a href="backtest-lab.html" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">← Back to Lab</a>
                 <h1 class="text-3xl font-black italic uppercase tracking-tighter">History</h1>
             </div>
-            <div class="flex gap-2 no-export">
-                <button onclick="downloadExcelFile()" class="btn-ex bg-emerald-500 shadow-lg">Excel</button>
-                <button onclick="downloadPDFFile()" class="btn-ex bg-indigo-600 shadow-lg">PDF</button>
+            <div class="flex gap-2">
+                <button onclick="downloadExcelFile()" class="btn-ex bg-emerald-500 shadow-lg">Download Excel</button>
             </div>
         </div>
 
-        <div class="no-export">
+        <div>
             <div class="mb-6">
                 <p class="text-[9px] font-black text-slate-400 uppercase mb-3 px-1">Outcome</p>
                 <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -101,7 +99,7 @@
 
         <div id="fullHistory" class="space-y-6"></div>
 
-        <div class="mt-10 flex flex-col items-center gap-5 no-export">
+        <div class="mt-10 flex flex-col items-center gap-5">
             <div class="flex items-center gap-4">
                 <button id="prevBtn" onclick="changePage(-1)" class="pagination-btn">PREV</button>
                 <span id="pageInfo" class="text-[10px] font-black text-slate-400">Page 1 of 1</span>
@@ -155,6 +153,7 @@
     </script>
 
     <script>
+        // --- MODERN ALERT LOGIC ---
         window.alert = function(msg) {
             document.getElementById('alertMessage').innerText = msg;
             document.getElementById('customAlert').style.display = 'flex';
@@ -227,7 +226,7 @@
             
             box.innerHTML = pageTrades.length === 0 ? '<div class="text-center py-20 uppercase font-black text-slate-300 text-[10px]">No Data Found</div>' : pageTrades.map(t => `
                 <div class="app-card p-5 bg-white relative">
-                    <button onclick="openSingleDelete(${t.id})" class="absolute top-4 right-4 text-slate-200 p-1 no-export"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <button onclick="openSingleDelete(${t.id})" class="absolute top-4 right-4 text-slate-200 p-1"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                     <div class="mb-2">
                         <span class="font-black ${t.dir === 'BUY' ? 'text-emerald-500' : 'text-red-500'} uppercase text-sm italic tracking-tighter">${t.dir} ${t.asset}</span>
                         <span class="ml-2 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${t.outcome === 'Win' ? 'bg-emerald-100 text-emerald-600' : t.outcome === 'Loss' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}">${t.outcome}</span>
@@ -258,40 +257,46 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- EXCEL DOWNLOAD FIX ---
+        // --- EXCEL DOWNLOAD FIX (UNLIMITED & SL/TP ADDED) ---
         window.downloadExcelFile = function() {
-            if (filteredTrades.length === 0) { alert("No data to export!"); return; }
-            const exportData = filteredTrades.map(t => ({
-                "Date": new Date(t.id).toLocaleDateString(),
-                "Asset": t.asset,
-                "Side": t.dir,
-                "Result": t.outcome,
-                "RR": t.rr,
-                "Session": t.sess,
-                "Setup": t.setup,
-                "Rules": t.rules ? t.rules.join(', ') : '',
-                "Entry": formatDisplayTime(t.entry),
-                "Exit": formatDisplayTime(t.exit)
-            }));
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Journal");
-            XLSX.writeFile(wb, `TradersIQ_Journal_${Date.now()}.xlsx`);
-        };
+            // Re-fetch latest data from localStorage to ensure sync
+            const currentTrades = JSON.parse(localStorage.getItem('lab_trades')) || [];
+            
+            if (currentTrades.length === 0) { 
+                alert("No data to export!"); 
+                return; 
+            }
 
-        // --- PDF DOWNLOAD FIX ---
-        window.downloadPDFFile = function() {
-            if (filteredTrades.length === 0) { alert("No data to export!"); return; }
-            const element = document.getElementById('pdfContent');
-            const options = {
-                margin: [10, 5],
-                filename: `TradersIQ_Report_${Date.now()}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, ignoreElements: (el) => el.classList.contains('no-export') },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            // Fresh download trigger
-            html2pdf().set(options).from(element).save();
+            try {
+                const exportData = currentTrades.map(t => ({
+                    "Date": new Date(t.id).toLocaleDateString(),
+                    "Asset": t.asset,
+                    "Side": t.dir,
+                    "Result": t.outcome,
+                    "SL": t.sl || '0',  // SL Added
+                    "TP": t.tp || '0',  // TP Added
+                    "RR": t.rr,
+                    "Session": t.sess,
+                    "Setup": t.setup,
+                    "Rules": t.rules ? t.rules.join(', ') : '',
+                    "Entry Time": formatDisplayTime(t.entry),
+                    "Exit Time": formatDisplayTime(t.exit),
+                    "Notes": t.notes || ''
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Journal");
+
+                // Unique filename using timestamp to allow multiple downloads
+                const uniqueFileName = `TradersIQ_Journal_${Date.now()}.xlsx`;
+                
+                XLSX.writeFile(wb, uniqueFileName);
+                
+            } catch (err) {
+                console.error("Excel Export Error:", err);
+                alert("Download failed. Please try again.");
+            }
         };
 
         function openSingleDelete(id) { pendingId = id; document.getElementById('modalTitle').innerText="Delete Trade?"; document.getElementById('modalConfirmBtn').onclick=confirmSingle; document.getElementById('confirmModal').style.display='flex'; }
@@ -307,5 +312,4 @@
         applyFilters();
     </script>
 </body>
-    </html>
-                    
+</html>
