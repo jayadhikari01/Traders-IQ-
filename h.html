@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Backtest History - Traders IQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { background-color: #F1F5F9; font-family: 'Inter', sans-serif; color: #1E293B; padding-bottom: 40px; -webkit-tap-highlight-color: transparent; }
+        .app-card { background: #FFFFFF; border-radius: 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #E2E8F0; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        #zoomOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 20000; align-items: center; justify-content: center; padding: 10px; }
+        .filter-btn { transition: all 0.2s; white-space: nowrap; border: 1px solid #E2E8F0; font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 10px 20px; border-radius: 99px; background: white; color: #94A3B8; }
+        .filter-btn.active { background: #6366F1; color: white; border-color: #6366F1; }
+        .pagination-btn { padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 12px; background: white; border: 1px solid #E2E8F0; }
+        .pagination-btn:disabled { opacity: 0.3; }
+        .search-container { position: relative; width: 100%; }
+        .search-input { width: 100%; background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 12px 48px 12px 16px; font-size: 12px; font-weight: 700; outline: none; }
+        .search-icon-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #6366F1; color: white; padding: 8px; border-radius: 12px; cursor: pointer; }
+        .btn-ex { padding: 10px 14px; border-radius: 14px; font-size: 10px; font-weight: 900; text-transform: uppercase; color: white; cursor: pointer; transition: 0.2s; }
+        .btn-ex:active { scale: 0.95; }
+
+        #customAlert { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 30000; align-items: center; justify-content: center; padding: 24px; }
+        .alert-card { background: white; width: 100%; max-w: 320px; border-radius: 32px; padding: 32px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        
+        /* PDF Template Styles */
+        #pdf-template { display: none; }
+        .pdf-table { width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 10px; }
+        .pdf-table th, .pdf-table td { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
+        .pdf-table th { background-color: #f1f5f9; font-weight: 900; text-transform: uppercase; color: #475569; }
+    </style>
+</head>
+<body>
+
+    <div id="customAlert">
+        <div class="alert-card">
+            <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl">⚡</div>
+            <h3 class="font-black uppercase italic text-sm tracking-widest text-slate-400 mb-2">Message</h3>
+            <p id="alertMessage" class="font-bold text-slate-800 mb-8 leading-tight"></p>
+            <button onclick="closeAlert()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all">OK</button>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay">
+        <div class="bg-white w-full max-w-xs rounded-[32px] p-8 text-center shadow-2xl">
+            <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-2xl">⚠️</span></div>
+            <h3 id="modalTitle" class="font-black text-lg mb-2 uppercase italic">Delete?</h3>
+            <p id="modalDesc" class="text-xs text-slate-400 font-bold mb-6">Are you sure?</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirm()" class="flex-1 py-4 bg-slate-100 rounded-2xl font-black text-xs uppercase">Cancel</button>
+                <button id="modalConfirmBtn" class="flex-1 py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="zoomOverlay" onclick="this.style.display='none'"><img id="zoomedImg" class="max-w-full max-h-full rounded-lg"></div>
+
+    <div id="pdf-template">
+        <div style="padding: 20px; font-family: 'Inter', sans-serif;">
+            <h1 style="font-size: 20px; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid #6366F1; padding-bottom: 10px; margin-bottom: 20px;">Traders IQ - Backtest Journal</h1>
+            <table class="pdf-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Market</th>
+                        <th>Side</th>
+                        <th>Result</th>
+                        <th>RR</th>
+                        <th>Setup</th>
+                        <th>In</th>
+                        <th>Out</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto p-5" id="historyContent">
+        <div class="flex justify-between items-center mb-6 mt-4">
+            <div class="flex flex-col">
+                <a href="backtest-lab.html" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">← Back to Lab</a>
+                <h1 class="text-3xl font-black italic uppercase tracking-tighter">History</h1>
+            </div>
+            <button onclick="sharePDF()" class="btn-ex bg-indigo-600 shadow-lg px-6">Share PDF</button>
+        </div>
+
+        <div>
+            <div class="mb-6">
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-3 px-1">Outcome</p>
+                <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    <button onclick="setOutcome('All')" id="fAll" class="filter-btn active">All</button>
+                    <button onclick="setOutcome('Win')" id="fWin" class="filter-btn">Wins</button>
+                    <button onclick="setOutcome('Loss')" id="fLoss" class="filter-btn">Losses</button>
+                    <button onclick="setOutcome('BE')" id="fBE" class="filter-btn">B.E</button>
+                </div>
+            </div>
+            <div class="mb-8">
+                <p class="text-[9px] font-black text-slate-400 uppercase mb-3 px-1">Market Search</p>
+                <div class="search-container">
+                    <input type="text" id="assetSearch" placeholder="Search..." class="search-input">
+                    <div onclick="triggerSearch()" class="search-icon-btn"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-8">
+            <div class="app-card p-4 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase">Trades</p>
+                <p id="statTotal" class="text-xl font-black text-slate-800">0</p>
+            </div>
+            <div class="app-card p-4 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase">Win Rate</p>
+                <p id="statWinRate" class="text-xl font-black text-emerald-500">0%</p>
+            </div>
+            <div class="app-card p-4 text-center">
+                <p class="text-[8px] font-black text-slate-400 uppercase">Net RR</p>
+                <p id="statNetRR" class="text-xl font-black text-indigo-600">0</p>
+            </div>
+        </div>
+
+        <div id="fullHistory" class="space-y-6"></div>
+
+        <div class="mt-10 flex flex-col items-center gap-5">
+            <div class="flex items-center gap-4">
+                <button id="prevBtn" onclick="changePage(-1)" class="pagination-btn">PREV</button>
+                <span id="pageInfo" class="text-[10px] font-black text-slate-400">Page 1 of 1</span>
+                <button id="nextBtn" onclick="changePage(1)" class="pagination-btn">NEXT</button>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                <span class="text-[9px] font-black text-slate-400 uppercase">Go To:</span>
+                <input type="number" id="gotoInput" min="1" class="w-10 bg-transparent text-center font-black text-xs text-indigo-600 outline-none" placeholder="1" onchange="jumpToPage(this.value)">
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+            authDomain: "traders-iq-app-f5169.firebaseapp.com",
+            projectId: "traders-iq-app-f5169",
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+            messagingSenderId: "411253913617",
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const userId = localStorage.getItem('traders_iq_userid') || "user_123";
+
+        window.syncHistoryFromCloud = async function() {
+            try {
+                const docSnap = await getDoc(doc(db, "backtest_lab", userId));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.trades) { 
+                        trades = data.trades; 
+                        localStorage.setItem('lab_trades', JSON.stringify(trades)); 
+                        applyFilters(); 
+                    }
+                }
+            } catch (e) { console.error("Cloud Fetch Error", e); }
+        };
+
+        window.updateHistoryOnCloud = async function(newData) {
+            try {
+                await setDoc(doc(db, "backtest_lab", userId), { trades: newData }, { merge: true });
+            } catch (e) { console.error("Cloud Save Error", e); }
+        };
+
+        window.onload = () => { window.syncHistoryFromCloud(); };
+    </script>
+
+    <script>
+        window.alert = function(msg) {
+            document.getElementById('alertMessage').innerText = msg;
+            document.getElementById('customAlert').style.display = 'flex';
+        };
+        function closeAlert() { document.getElementById('customAlert').style.display = 'none'; }
+
+        let trades = JSON.parse(localStorage.getItem('lab_trades')) || [];
+        let filteredTrades = [...trades];
+        let currentPage = 1;
+        const limit = 10;
+        let outcomeFilter = 'All';
+        let searchQuery = '';
+        let pendingId = null;
+
+        function formatDisplayTime(utcString) {
+            if(!utcString || utcString === '--:--') return '--:--';
+            try {
+                const date = new Date(utcString);
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            } catch(e) { return utcString; }
+        }
+
+        function updateStats(data) {
+            const total = data.length;
+            const wins = data.filter(t => t.outcome === 'Win').length;
+            const winRate = total > 0 ? ((wins / total) * 100).toFixed(0) : 0;
+            let netRR = 0;
+            data.forEach(t => {
+                let r = parseFloat(t.rr) || 0;
+                if(t.outcome === 'Win') netRR += r;
+                else if(t.outcome === 'Loss') netRR -= 1;
+            });
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statWinRate').innerText = winRate + '%';
+            document.getElementById('statNetRR').innerText = netRR.toFixed(1);
+        }
+
+        function setOutcome(f) { outcomeFilter = f; applyFilters(); document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); document.getElementById('f'+f).classList.add('active'); }
+        function triggerSearch() { searchQuery = document.getElementById('assetSearch').value.toLowerCase(); applyFilters(); }
+
+        function applyFilters() {
+            currentPage = 1;
+            filteredTrades = trades.filter(t => (outcomeFilter === 'All' || t.outcome === outcomeFilter) && t.asset.toLowerCase().includes(searchQuery));
+            updateStats(filteredTrades); 
+            render();
+        }
+
+        function jumpToPage(val) { 
+            const page = parseInt(val); 
+            const totalPages = Math.ceil(filteredTrades.length / limit) || 1; 
+            if(page >= 1 && page <= totalPages) { currentPage = page; render(); window.scrollTo(0,0); } 
+            else { document.getElementById('gotoInput').value = currentPage; } 
+        }
+
+        function zoomImg(src) { document.getElementById('zoomedImg').src = src; document.getElementById('zoomOverlay').style.display = 'flex'; }
+
+        function render() {
+            const start = (currentPage - 1) * limit;
+            const pageTrades = filteredTrades.slice(start, start + limit);
+            const box = document.getElementById('fullHistory');
+            
+            box.innerHTML = pageTrades.length === 0 ? '<div class="text-center py-20 uppercase font-black text-slate-300 text-[10px]">No Data Found</div>' : pageTrades.map(t => `
+                <div class="app-card p-5 bg-white relative">
+                    <button onclick="openSingleDelete(${t.id})" class="absolute top-4 right-4 text-slate-200 p-1"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <div class="mb-2">
+                        <span class="font-black ${t.dir === 'BUY' ? 'text-emerald-500' : 'text-red-500'} uppercase text-sm italic tracking-tighter">${t.dir} ${t.asset}</span>
+                        <span class="ml-2 px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${t.outcome === 'Win' ? 'bg-emerald-100 text-emerald-600' : t.outcome === 'Loss' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}">${t.outcome}</span>
+                    </div>
+                    <p class="text-[8px] font-black text-slate-300 uppercase mb-3">${new Date(t.id).toLocaleDateString()}</p>
+                    ${t.ss ? `<img src="${t.ss}" onclick="zoomImg(this.src)" class="w-full h-44 object-cover rounded-xl mb-4 border border-slate-100 cursor-pointer">` : ''}
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <div class="text-[7px] font-black text-slate-400 uppercase">Session<p class="text-[9px] font-bold text-slate-700 uppercase">${t.sess}</p></div>
+                        <div class="text-[7px] font-black text-slate-400 uppercase">SL/TP<p class="text-[9px] font-bold text-slate-700 uppercase">${t.sl}/${t.tp}</p></div>
+                        <div class="text-[7px] font-black text-slate-400 uppercase">Setup<p class="text-[9px] font-bold text-slate-700 uppercase truncate">${t.setup}</p></div>
+                        <div class="text-[7px] font-black text-slate-400 uppercase">RR<p class="text-[9px] font-black text-slate-900 uppercase">${t.rr}R</p></div>
+                    </div>
+                    ${t.rules && t.rules.length > 0 ? `<div class="mb-4 flex flex-wrap gap-1">${t.rules.map(r => `<span class="bg-indigo-50 text-indigo-600 text-[8px] px-2 py-0.5 rounded-full font-bold">✓ ${r}</span>`).join('')}</div>` : ''}
+                    ${t.notes ? `<div class="p-3 bg-slate-50 rounded-xl mb-3"><p class="text-[9px] text-slate-600 italic font-medium">"${t.notes}"</p></div>` : ''}
+                    <div class="pt-2 border-t border-slate-50 flex gap-4">
+                        <div><span class="text-[8px] font-black text-slate-300 uppercase">IN:</span> <span class="text-[9px] font-bold text-slate-500">${formatDisplayTime(t.entry)}</span></div>
+                        <div><span class="text-[8px] font-black text-slate-300 uppercase">OUT:</span> <span class="text-[9px] font-bold text-slate-500">${formatDisplayTime(t.exit)}</span></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            const totalPages = Math.ceil(filteredTrades.length / limit) || 1;
+            document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
+
+        // --- PDF Share with Entry/Exit Time ---
+        window.sharePDF = async function() {
+            if (filteredTrades.length === 0) { alert("No data to share!"); return; }
+            
+            const pdfBody = document.getElementById('pdf-body');
+            pdfBody.innerHTML = filteredTrades.map(t => `
+                <tr>
+                    <td>${new Date(t.id).toLocaleDateString()}</td>
+                    <td>${t.asset}</td>
+                    <td style="color: ${t.dir === 'BUY' ? '#10b981' : '#f43f5e'}; font-weight: 900;">${t.dir}</td>
+                    <td>${t.outcome}</td>
+                    <td>${t.rr}R</td>
+                    <td>${t.setup}</td>
+                    <td>${formatDisplayTime(t.entry)}</td>
+                    <td>${formatDisplayTime(t.exit)}</td>
+                    <td style="font-style: italic; color: #64748b;">${t.notes || '-'}</td>
+                </tr>
+            `).join('');
+
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block';
+
+            const opt = {
+                margin: 10,
+                filename: `Trading_Journal_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } // Landscape for better space
+            };
+
+            try {
+                const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+                element.style.display = 'none';
+
+                const file = new File([pdfBlob], "Trading_Journal.pdf", { type: "application/pdf" });
+
+                if (navigator.share) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Backtest Journal',
+                        text: 'Detailed report from Traders IQ'
+                    });
+                } else {
+                    html2pdf().from(element).set(opt).save();
+                }
+            } catch (err) {
+                console.error("PDF Error:", err);
+                alert("Failed to share PDF.");
+                element.style.display = 'none';
+            }
+        };
+
+        function openSingleDelete(id) { pendingId = id; document.getElementById('modalTitle').innerText="Delete Trade?"; document.getElementById('modalConfirmBtn').onclick=confirmSingle; document.getElementById('confirmModal').style.display='flex'; }
+        function closeConfirm() { document.getElementById('confirmModal').style.display='none'; }
+        function confirmSingle() { trades = trades.filter(t => t.id !== pendingId); save(); }
+        function save() { 
+            localStorage.setItem('lab_trades', JSON.stringify(trades)); 
+            if(window.updateHistoryOnCloud) window.updateHistoryOnCloud(trades);
+            applyFilters(); closeConfirm(); 
+        }
+
+        applyFilters();
+    </script>
+</body>
+</html>
