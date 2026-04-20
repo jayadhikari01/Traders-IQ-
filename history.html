@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Backtest History - Traders IQ</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #F1F5F9; font-family: 'Inter', sans-serif; color: #1E293B; padding-bottom: 40px; -webkit-tap-highlight-color: transparent; }
@@ -246,13 +246,12 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- EXCEL SHARE LOGIC (DETAILED) ---
+        // --- FIXED EXCEL SHARE LOGIC ---
         window.shareExcelFile = async function() {
             const dataToGet = JSON.parse(localStorage.getItem('lab_trades')) || [];
             if (dataToGet.length === 0) { alert("No trades found to share!"); return; }
 
             try {
-                // Formatting data with all details
                 const sheetData = dataToGet.map(t => ({
                     "Date": new Date(t.id).toLocaleDateString(),
                     "Asset": t.asset,
@@ -271,27 +270,30 @@
 
                 const ws = XLSX.utils.json_to_sheet(sheetData);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Backtest Journal");
+                XLSX.utils.book_append_sheet(wb, ws, "Journal");
 
-                // Generate file content
+                // Generate array buffer
                 const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const file = new File([wbout], `TradersIQ_Journal_${Date.now()}.xlsx`, { 
+                
+                // Create proper File object for sharing
+                const fileName = `TradersIQ_Journal_${new Date().getTime()}.xlsx`;
+                const file = new File([wbout], fileName, { 
                     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
                 });
 
-                // Trigger Web Share API
-                if (navigator.share) {
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         files: [file],
-                        title: 'Trading Backtest Report',
-                        text: 'Sharing my detailed trading journal from Traders IQ.'
+                        title: 'Trading Journal',
+                        text: 'My Detailed Backtest Report from Traders IQ'
                     });
                 } else {
-                    alert("Sharing not supported on this browser.");
+                    // Fallback download for browsers that don't support file sharing
+                    XLSX.writeFile(wb, fileName);
                 }
             } catch (err) {
-                console.error("Excel Share Error:", err);
-                alert("Failed to share file.");
+                console.error("Share Error:", err);
+                alert("Failed to share file. Try again.");
             }
         };
 
@@ -307,5 +309,5 @@
         applyFilters();
     </script>
 </body>
-    </html>
+                                                                                  </html>
     
