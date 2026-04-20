@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Backtest History - Traders IQ</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #F1F5F9; font-family: 'Inter', sans-serif; color: #1E293B; padding-bottom: 40px; -webkit-tap-highlight-color: transparent; }
@@ -24,6 +24,12 @@
 
         #customAlert { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 30000; align-items: center; justify-content: center; padding: 24px; }
         .alert-card { background: white; width: 100%; max-w: 320px; border-radius: 32px; padding: 32px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        
+        /* Styles for PDF Generation only */
+        #pdf-template { display: none; }
+        .pdf-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .pdf-table th, .pdf-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .pdf-table th { background-color: #f2f2f2; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -51,14 +57,36 @@
 
     <div id="zoomOverlay" onclick="this.style.display='none'"><img id="zoomedImg" class="max-w-full max-h-full rounded-lg"></div>
 
+    <div id="pdf-template">
+        <div style="padding: 20px;">
+            <h1 style="font-size: 24px; font-weight: 900; text-transform: uppercase; margin-bottom: 20px;">Traders IQ - Backtest Journal</h1>
+            <table class="pdf-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Asset</th>
+                        <th>Dir</th>
+                        <th>Result</th>
+                        <th>SL/TP</th>
+                        <th>RR</th>
+                        <th>Setup</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-body"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="max-w-md mx-auto p-5" id="historyContent">
+        
         <div class="flex justify-between items-center mb-6 mt-4">
             <div class="flex flex-col">
                 <a href="backtest-lab.html" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">← Back to Lab</a>
                 <h1 class="text-3xl font-black italic uppercase tracking-tighter">History</h1>
             </div>
             <div>
-                <button onclick="shareExcelFile()" class="btn-ex bg-emerald-500 shadow-lg px-6">Share Excel</button>
+                <button onclick="sharePDF()" class="btn-ex bg-indigo-600 shadow-lg px-6">Share PDF</button>
             </div>
         </div>
 
@@ -103,10 +131,6 @@
                 <button id="prevBtn" onclick="changePage(-1)" class="pagination-btn">PREV</button>
                 <span id="pageInfo" class="text-[10px] font-black text-slate-400">Page 1 of 1</span>
                 <button id="nextBtn" onclick="changePage(1)" class="pagination-btn">NEXT</button>
-            </div>
-            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                <span class="text-[9px] font-black text-slate-400 uppercase">Go To:</span>
-                <input type="number" id="gotoInput" min="1" class="w-10 bg-transparent text-center font-black text-xs text-indigo-600 outline-none" placeholder="1" onchange="jumpToPage(this.value)">
             </div>
         </div>
     </div>
@@ -199,13 +223,6 @@
             render();
         }
 
-        function jumpToPage(val) { 
-            const page = parseInt(val); 
-            const totalPages = Math.ceil(filteredTrades.length / limit) || 1; 
-            if(page >= 1 && page <= totalPages) { currentPage = page; render(); window.scrollTo(0,0); } 
-            else { document.getElementById('gotoInput').value = currentPage; } 
-        }
-
         function zoomImg(src) { document.getElementById('zoomedImg').src = src; document.getElementById('zoomOverlay').style.display = 'flex'; }
 
         function render() {
@@ -245,54 +262,54 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- FINAL FIXED EXCEL SHARE LOGIC ---
-        window.shareExcelFile = async function() {
-            const dataToGet = JSON.parse(localStorage.getItem('lab_trades')) || [];
-            if (dataToGet.length === 0) { alert("No trades found to share!"); return; }
+        // --- PDF GENERATION & SHARE LOGIC ---
+        window.sharePDF = async function() {
+            if (filteredTrades.length === 0) { alert("No data to share!"); return; }
+            
+            const pdfBody = document.getElementById('pdf-body');
+            pdfBody.innerHTML = filteredTrades.map(t => `
+                <tr>
+                    <td>${new Date(t.id).toLocaleDateString()}</td>
+                    <td>${t.asset}</td>
+                    <td>${t.dir}</td>
+                    <td>${t.outcome}</td>
+                    <td>${t.sl}/${t.tp}</td>
+                    <td>${t.rr}R</td>
+                    <td>${t.setup}</td>
+                    <td>${t.notes || '-'}</td>
+                </tr>
+            `).join('');
+
+            const element = document.getElementById('pdf-template');
+            element.style.display = 'block';
+
+            const opt = {
+                margin: 10,
+                filename: 'Trading_Journal.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
 
             try {
-                const sheetData = dataToGet.map(t => ({
-                    "Date": new Date(t.id).toLocaleDateString(),
-                    "Asset": t.asset,
-                    "Side": t.dir,
-                    "Outcome": t.outcome,
-                    "SL": t.sl || '0',
-                    "TP": t.tp || '0',
-                    "Risk-Reward": t.rr + 'R',
-                    "Session": t.sess,
-                    "Setup": t.setup,
-                    "Rules Followed": t.rules ? t.rules.join(', ') : 'None',
-                    "Entry Time": formatDisplayTime(t.entry),
-                    "Exit Time": formatDisplayTime(t.exit),
-                    "Notes": t.notes || ''
-                }));
+                const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+                element.style.display = 'none';
 
-                const ws = XLSX.utils.json_to_sheet(sheetData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Journal");
+                const file = new File([pdfBlob], "Trading_Journal.pdf", { type: "application/pdf" });
 
-                // Buffer creation
-                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                
-                // Using application/octet-stream for better mobile compatibility
-                const blob = new Blob([wbout], { type: 'application/octet-stream' });
-                const fileName = `TradersIQ_${Date.now()}.xlsx`;
-                const file = new File([blob], fileName, { type: 'application/octet-stream' });
-
-                // Check and Share
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                if (navigator.share) {
                     await navigator.share({
                         files: [file],
-                        title: 'Trading Journal',
-                        text: 'Detailed Backtest Journal from Traders IQ'
+                        title: 'Backtest Journal',
+                        text: 'Detailed report from Traders IQ'
                     });
                 } else {
-                    // Direct Download for unsupported share browsers
-                    XLSX.writeFile(wb, fileName);
+                    html2pdf().from(element).set(opt).save();
                 }
             } catch (err) {
-                console.error("Critical Share Error:", err);
-                alert("Sharing failed. Device settings may block file sharing.");
+                console.error("PDF Error:", err);
+                alert("Failed to share PDF.");
+                element.style.display = 'none';
             }
         };
 
@@ -308,5 +325,5 @@
         applyFilters();
     </script>
 </body>
-</html>
+    </html>
     
