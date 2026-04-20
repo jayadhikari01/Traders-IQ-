@@ -52,7 +52,6 @@
     <div id="zoomOverlay" onclick="this.style.display='none'"><img id="zoomedImg" class="max-w-full max-h-full rounded-lg"></div>
 
     <div class="max-w-md mx-auto p-5" id="historyContent">
-        
         <div class="flex justify-between items-center mb-6 mt-4">
             <div class="flex flex-col">
                 <a href="backtest-lab.html" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">← Back to Lab</a>
@@ -246,7 +245,7 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- FIXED EXCEL SHARE LOGIC ---
+        // --- FINAL FIXED EXCEL SHARE LOGIC ---
         window.shareExcelFile = async function() {
             const dataToGet = JSON.parse(localStorage.getItem('lab_trades')) || [];
             if (dataToGet.length === 0) { alert("No trades found to share!"); return; }
@@ -272,28 +271,28 @@
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Journal");
 
-                // Generate array buffer
+                // Buffer creation
                 const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
                 
-                // Create proper File object for sharing
-                const fileName = `TradersIQ_Journal_${new Date().getTime()}.xlsx`;
-                const file = new File([wbout], fileName, { 
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-                });
+                // Using application/octet-stream for better mobile compatibility
+                const blob = new Blob([wbout], { type: 'application/octet-stream' });
+                const fileName = `TradersIQ_${Date.now()}.xlsx`;
+                const file = new File([blob], fileName, { type: 'application/octet-stream' });
 
+                // Check and Share
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         files: [file],
                         title: 'Trading Journal',
-                        text: 'My Detailed Backtest Report from Traders IQ'
+                        text: 'Detailed Backtest Journal from Traders IQ'
                     });
                 } else {
-                    // Fallback download for browsers that don't support file sharing
+                    // Direct Download for unsupported share browsers
                     XLSX.writeFile(wb, fileName);
                 }
             } catch (err) {
-                console.error("Share Error:", err);
-                alert("Failed to share file. Try again.");
+                console.error("Critical Share Error:", err);
+                alert("Sharing failed. Device settings may block file sharing.");
             }
         };
 
@@ -309,5 +308,5 @@
         applyFilters();
     </script>
 </body>
-                                                                                  </html>
+</html>
     
