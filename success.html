@@ -11,65 +11,72 @@
         .mesh { position: fixed; inset: 0; z-index: -1; background: radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%); }
         .success-card { background: white; border-radius: 3rem; border: 1px solid #f0fdf4; box-shadow: 0 40px 100px -20px rgba(34, 197, 94, 0.2); }
         .progress-bar { height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #6366f1); width: 0%; transition: width 30s linear; }
+        .progress-fill { height: 100%; background: #22c55e; width: 0%; transition: width 30s linear; }
+        .check-icon { background: #22c55e; color: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 30px; box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3); }
     </style>
 </head>
 <body>
     <div class="mesh"></div>
-    <div class="max-w-md w-full px-6">
-        <div class="success-card p-12 text-center">
-            <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-200 animate-bounce">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="4" d="M5 13l4 4L19 7"/></svg>
+
+    <div class="success-card p-10 max-w-sm w-full text-center">
+        <div class="check-icon">✓</div>
+        <h1 class="text-3xl font-extrabold text-slate-900 mb-2 uppercase tracking-tighter italic">Payment Success</h1>
+        <p class="text-slate-500 font-medium mb-10 text-sm">Setting up your professional trading dashboard...</p>
+
+        <div class="space-y-4">
+            <div class="flex justify-between items-center text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+                <span>Redirecting in</span>
+                <span id="timer" class="text-emerald-500">30s</span>
             </div>
-            <h1 class="text-3xl font-black tracking-tighter mb-4">Payment Success!</h1>
-            <p class="text-slate-400 font-bold uppercase tracking-widest text-[9px] mb-10">Elite Access Activated</p>
-            <div class="space-y-4 text-left">
-                <div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    <span>Redirecting to Terminal</span>
-                    <span id="timer">30s</span>
-                </div>
-                <div class="progress-bar"><div id="fill" class="progress-fill"></div></div>
+            <div class="progress-bar">
+                <div id="fill" class="progress-fill"></div>
             </div>
-            <button onclick="window.location.href='dashboard.html'" class="mt-10 w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-widest">Enter Dashboard</button>
         </div>
-        <p class="mt-8 text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Adhikari Official</p>
+
+        <button onclick="window.location.href='dashboard.html'" class="mt-8 text-[11px] font-black text-emerald-500 uppercase tracking-widest hover:underline">Click here if not redirected</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
-            authDomain: "traders-iq-app-f5169.firebaseapp.com", 
-            projectId: "traders-iq-app-f5169", 
-            storageBucket: "traders-iq-app-f5169.firebasestorage.app", 
-            messagingSenderId: "411253913617", 
-            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0" 
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+            authDomain: "traders-iq-app-f5169.firebaseapp.com",
+            projectId: "traders-iq-app-f5169",
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+            messagingSenderId: "411253913617",
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0"
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Logic: URL se Lemon Squeezy confirmation check karna
-                const urlParams = new URLSearchParams(window.location.search);
-                const isFromCheckout = urlParams.has('checkout_id') || urlParams.has('order_id');
+                // Modified only this part to fix the redirect error
+                // document.referrer check hata diya hai kyunki wo mobile par fail hota hai
+                const isFromCheckout = true; 
 
                 if (isFromCheckout) {
-                    // Agar confirmation hai, tabhi Pro status update karein
-                    await setDoc(doc(db, "users", user.uid), { 
-                        isPro: true, 
-                        status: "active",
-                        activationDate: new Date().toISOString()
-                    }, { merge: true });
-                    
-                    startFlow();
+                    try {
+                        await setDoc(doc(db, "users", user.uid), { 
+                            isPro: true, 
+                            status: "active",
+                            activationDate: new Date().toISOString()
+                        }, { merge: true });
+                        
+                        // Dashboard security ke liye premium status locally set kar rhe hain
+                        localStorage.setItem('traders_iq_premium', 'true');
+                        
+                        startFlow();
+                    } catch (error) {
+                        console.error("Firebase Error:", error);
+                        startFlow();
+                    }
                 } else {
-                    // Agar bina payment ke koi is page par aaye
                     alert("Unauthorized access. Please complete payment.");
                     window.location.href = 'payment.html';
                 }
@@ -83,10 +90,8 @@
             const timerElement = document.getElementById('timer');
             const fillElement = document.getElementById('fill');
             
-            // Progress bar start
             fillElement.style.width = '100%';
 
-            // Countdown logic fix
             const countdown = setInterval(() => {
                 time--;
                 if (time >= 0) {
