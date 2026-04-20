@@ -257,49 +257,53 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- EXCEL DOWNLOAD FIX (UNLIMITED & SL/TP) ---
+        // --- EXCEL DOWNLOAD FIX (STOPS FREEZING) ---
         window.downloadExcelFile = function() {
-            // Re-fetch fresh data from local storage every time
-            const latestTrades = JSON.parse(localStorage.getItem('lab_trades')) || [];
+            // Memory release before starting
+            let currentTrades = JSON.parse(localStorage.getItem('lab_trades')) || [];
             
-            if (latestTrades.length === 0) {
+            if (currentTrades.length === 0) {
                 alert("No data to export!");
                 return;
             }
 
-            try {
-                // Formatting data for Excel
-                const dataToExport = latestTrades.map(t => ({
-                    "Date": new Date(t.id).toLocaleDateString(),
-                    "Asset": t.asset,
-                    "Side": t.dir,
-                    "Result": t.outcome,
-                    "Stop Loss": t.sl || '0',
-                    "Take Profit": t.tp || '0',
-                    "Risk Reward": t.rr + 'R',
-                    "Session": t.sess,
-                    "Setup": t.setup,
-                    "Rules Violated": t.rules ? t.rules.join(', ') : 'None',
-                    "Entry Time": formatDisplayTime(t.entry),
-                    "Exit Time": formatDisplayTime(t.exit),
-                    "Notes": t.notes || ''
-                }));
+            // Using setTimeout to prevent UI/Process freezing
+            setTimeout(() => {
+                try {
+                    const dataToExport = currentTrades.map(t => ({
+                        "Date": new Date(t.id).toLocaleDateString(),
+                        "Asset": t.asset,
+                        "Side": t.dir,
+                        "Result": t.outcome,
+                        "SL": t.sl || '0',
+                        "TP": t.tp || '0',
+                        "RR": t.rr + 'R',
+                        "Session": t.sess,
+                        "Setup": t.setup,
+                        "Rules": t.rules ? t.rules.join(', ') : 'None',
+                        "Entry": formatDisplayTime(t.entry),
+                        "Exit": formatDisplayTime(t.exit),
+                        "Notes": t.notes || ''
+                    }));
 
-                // Logic to handle multiple downloads
-                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Trades");
+                    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Journal");
 
-                // Generate a unique filename every time using timestamp
-                const filename = `TradersIQ_Journal_${new Date().getTime()}.xlsx`;
+                    // Explicit naming with high precision timestamp to bypass browser locks
+                    const filename = `TradersIQ_Log_${Date.now()}.xlsx`;
 
-                // Explicitly write and trigger download
-                XLSX.writeFile(workbook, filename);
+                    // Triggering Write & Download
+                    XLSX.writeFile(workbook, filename);
+                    
+                    // Cleanup references to help Garbage Collection
+                    currentTrades = null;
 
-            } catch (err) {
-                console.error("Download error:", err);
-                alert("Download failed. Please refresh and try again.");
-            }
+                } catch (err) {
+                    console.error("Export Error:", err);
+                    alert("Download failed. Try refreshing.");
+                }
+            }, 100);
         };
 
         function openSingleDelete(id) { pendingId = id; document.getElementById('modalTitle').innerText="Delete Trade?"; document.getElementById('modalConfirmBtn').onclick=confirmSingle; document.getElementById('confirmModal').style.display='flex'; }
@@ -315,4 +319,5 @@
         applyFilters();
     </script>
 </body>
-</html>
+    </html>
+    
