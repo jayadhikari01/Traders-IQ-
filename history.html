@@ -20,7 +20,7 @@
         .search-container { position: relative; width: 100%; }
         .search-input { width: 100%; background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 12px 48px 12px 16px; font-size: 12px; font-weight: 700; outline: none; }
         .search-icon-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #6366F1; color: white; padding: 8px; border-radius: 12px; cursor: pointer; }
-        .btn-ex { padding: 10px 14px; border-radius: 14px; font-size: 9px; font-weight: 900; text-transform: uppercase; color: white; }
+        .btn-ex { padding: 10px 14px; border-radius: 14px; font-size: 9px; font-weight: 900; text-transform: uppercase; color: white; cursor: pointer; }
 
         /* Modern Custom Alert Styles */
         #customAlert { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 30000; align-items: center; justify-content: center; padding: 24px; }
@@ -30,7 +30,7 @@
 <body>
 
     <div id="customAlert">
-        <div class="alert-card animate-in zoom-in duration-200">
+        <div class="alert-card">
             <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl">⚡</div>
             <h3 class="font-black uppercase italic text-sm tracking-widest text-slate-400 mb-2">Message</h3>
             <p id="alertMessage" class="font-bold text-slate-800 mb-8 leading-tight"></p>
@@ -60,8 +60,8 @@
                 <h1 class="text-3xl font-black italic uppercase tracking-tighter">History</h1>
             </div>
             <div class="flex gap-2 no-export">
-                <button onclick="downloadExcelNow()" class="btn-ex bg-emerald-500 shadow-lg">Excel</button>
-                <button onclick="downloadPDFNow()" class="btn-ex bg-indigo-600 shadow-lg">PDF</button>
+                <button onclick="handleExcelDownload()" class="btn-ex bg-emerald-500 shadow-lg">Excel</button>
+                <button onclick="handlePDFDownload()" class="btn-ex bg-indigo-600 shadow-lg">PDF</button>
             </div>
         </div>
 
@@ -157,8 +157,9 @@
     <script>
         // --- MODERN ALERT LOGIC ---
         window.alert = function(msg) {
+            const alertBox = document.getElementById('customAlert');
             document.getElementById('alertMessage').innerText = msg;
-            document.getElementById('customAlert').style.display = 'flex';
+            alertBox.style.display = 'flex';
         };
 
         function closeAlert() {
@@ -259,17 +260,17 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- DIRECT EXCEL DOWNLOAD ---
-        window.downloadExcelNow = function() {
+        // --- EXCEL LOGIC ---
+        window.handleExcelDownload = function() {
             if (!filteredTrades || filteredTrades.length === 0) {
                 alert("No data to export!");
                 return;
             }
             try {
-                const data = filteredTrades.map(t => ({
+                const exportData = filteredTrades.map(t => ({
                     "Date": new Date(t.id).toLocaleDateString(),
                     "Asset": t.asset,
-                    "Dir": t.dir,
+                    "Direction": t.dir,
                     "Outcome": t.outcome,
                     "RR": t.rr,
                     "Session": t.sess,
@@ -279,18 +280,18 @@
                     "Exit": formatDisplayTime(t.exit),
                     "Notes": t.notes || ''
                 }));
-                const worksheet = XLSX.utils.json_to_sheet(data);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Journal");
-                XLSX.writeFile(workbook, "TradersIQ_History.xlsx");
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Trades History");
+                XLSX.writeFile(wb, `TradersIQ_History_${Date.now()}.xlsx`);
             } catch (err) {
                 console.error("Excel Error:", err);
                 alert("Excel download failed.");
             }
         };
 
-        // --- DIRECT PDF DOWNLOAD ---
-        window.downloadPDFNow = function() {
+        // --- PDF LOGIC ---
+        window.handlePDFDownload = function() {
             if (!filteredTrades || filteredTrades.length === 0) {
                 alert("No data to export!");
                 return;
@@ -298,13 +299,9 @@
             const element = document.getElementById('pdfContent');
             const options = {
                 margin: [10, 5],
-                filename: 'TradersIQ_History.pdf',
+                filename: `TradersIQ_Report_${Date.now()}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true,
-                    ignoreElements: (el) => el.classList.contains('no-export')
-                },
+                html2canvas: { scale: 2, useCORS: true, ignoreElements: (el) => el.classList.contains('no-export') },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(options).from(element).save();
@@ -323,5 +320,6 @@
         applyFilters();
     </script>
 </body>
-    </html>
+</html>
+>
     
