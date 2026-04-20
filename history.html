@@ -150,17 +150,14 @@
         let searchQuery = '';
         let pendingId = null;
 
-        // --- TIME ZONE HANDLING LOGIC ---
         function formatDisplayTime(utcString) {
             if(!utcString || utcString === '--:--') return '--:--';
             try {
-                // Agar data ISO format (UTC) mein hai toh local mein badlega
                 const date = new Date(utcString);
-                if (isNaN(date.getTime())) return utcString; // Fallback agar valid date nahi hai
+                if (isNaN(date.getTime())) return utcString;
                 return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             } catch(e) { return utcString; }
         }
-        // ---------------------------------
 
         function updateStats(data) {
             const total = data.length;
@@ -238,15 +235,38 @@
         }
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
+        
         function exportExcel() {
             if(filteredTrades.length === 0) return;
             const ws = XLSX.utils.json_to_sheet(filteredTrades.map(t => ({ Date: new Date(t.id).toLocaleDateString(), Market: t.asset, Dir: t.dir, Outcome: t.outcome, RR: t.rr, Session: t.sess, Setup: t.setup, Rules: t.rules ? t.rules.join(', ') : '', Notes: t.notes, Entry: formatDisplayTime(t.entry), Exit: formatDisplayTime(t.exit) })));
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Journal"); XLSX.writeFile(wb, "Filtered_Journal.xlsx");
         }
+
+        // --- UPDATED PDF EXPORT LOGIC ---
         function exportPDF() {
             const element = document.getElementById('pdfContent');
-            html2pdf().from(element).set({ margin: 10, filename: 'Filtered_Journal.pdf', html2canvas: { scale: 2, useCORS: true, ignoreElements: (el) => el.classList.contains('no-export') }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
+            const opt = {
+                margin: [10, 5, 10, 5],
+                filename: 'Filtered_Journal.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true, 
+                    letterRendering: true,
+                    ignoreElements: (el) => el.classList.contains('no-export')
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Fixing potential race conditions and ensuring elements are ready
+            html2pdf().set(opt).from(element).toPdf().get('pdf').save().then(() => {
+                console.log("PDF Exported successfully");
+            }).catch(err => {
+                console.error("PDF Export error:", err);
+                alert("Failed to generate PDF. Please try again.");
+            });
         }
+
         function openSingleDelete(id) { pendingId = id; document.getElementById('modalTitle').innerText="Delete Trade?"; document.getElementById('modalConfirmBtn').onclick=confirmSingle; document.getElementById('confirmModal').style.display='flex'; }
         function closeConfirm() { document.getElementById('confirmModal').style.display='none'; }
         function confirmSingle() { trades = trades.filter(t => t.id !== pendingId); save(); }
@@ -260,4 +280,5 @@
         applyFilters();
     </script>
 </body>
-</html>
+                        </html>
+    
