@@ -60,8 +60,8 @@
                 <h1 class="text-3xl font-black italic uppercase tracking-tighter">History</h1>
             </div>
             <div class="flex gap-2 no-export">
-                <button onclick="handleExcelDownload()" class="btn-ex bg-emerald-500 shadow-lg">Excel</button>
-                <button onclick="handlePDFDownload()" class="btn-ex bg-indigo-600 shadow-lg">PDF</button>
+                <button onclick="downloadExcelFile()" class="btn-ex bg-emerald-500 shadow-lg">Excel</button>
+                <button onclick="downloadPDFFile()" class="btn-ex bg-indigo-600 shadow-lg">PDF</button>
             </div>
         </div>
 
@@ -155,11 +155,9 @@
     </script>
 
     <script>
-        // --- MODERN ALERT LOGIC ---
         window.alert = function(msg) {
-            const alertBox = document.getElementById('customAlert');
             document.getElementById('alertMessage').innerText = msg;
-            alertBox.style.display = 'flex';
+            document.getElementById('customAlert').style.display = 'flex';
         };
 
         function closeAlert() {
@@ -260,42 +258,30 @@
 
         function changePage(v) { currentPage += v; render(); window.scrollTo(0,0); }
 
-        // --- EXCEL LOGIC ---
-        window.handleExcelDownload = function() {
-            if (!filteredTrades || filteredTrades.length === 0) {
-                alert("No data to export!");
-                return;
-            }
-            try {
-                const exportData = filteredTrades.map(t => ({
-                    "Date": new Date(t.id).toLocaleDateString(),
-                    "Asset": t.asset,
-                    "Direction": t.dir,
-                    "Outcome": t.outcome,
-                    "RR": t.rr,
-                    "Session": t.sess,
-                    "Setup": t.setup,
-                    "Rules": t.rules ? t.rules.join(', ') : '',
-                    "Entry": formatDisplayTime(t.entry),
-                    "Exit": formatDisplayTime(t.exit),
-                    "Notes": t.notes || ''
-                }));
-                const ws = XLSX.utils.json_to_sheet(exportData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Trades History");
-                XLSX.writeFile(wb, `TradersIQ_History_${Date.now()}.xlsx`);
-            } catch (err) {
-                console.error("Excel Error:", err);
-                alert("Excel download failed.");
-            }
+        // --- EXCEL DOWNLOAD FIX ---
+        window.downloadExcelFile = function() {
+            if (filteredTrades.length === 0) { alert("No data to export!"); return; }
+            const exportData = filteredTrades.map(t => ({
+                "Date": new Date(t.id).toLocaleDateString(),
+                "Asset": t.asset,
+                "Side": t.dir,
+                "Result": t.outcome,
+                "RR": t.rr,
+                "Session": t.sess,
+                "Setup": t.setup,
+                "Rules": t.rules ? t.rules.join(', ') : '',
+                "Entry": formatDisplayTime(t.entry),
+                "Exit": formatDisplayTime(t.exit)
+            }));
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Journal");
+            XLSX.writeFile(wb, `TradersIQ_Journal_${Date.now()}.xlsx`);
         };
 
-        // --- PDF LOGIC ---
-        window.handlePDFDownload = function() {
-            if (!filteredTrades || filteredTrades.length === 0) {
-                alert("No data to export!");
-                return;
-            }
+        // --- PDF DOWNLOAD FIX ---
+        window.downloadPDFFile = function() {
+            if (filteredTrades.length === 0) { alert("No data to export!"); return; }
             const element = document.getElementById('pdfContent');
             const options = {
                 margin: [10, 5],
@@ -304,6 +290,7 @@
                 html2canvas: { scale: 2, useCORS: true, ignoreElements: (el) => el.classList.contains('no-export') },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
+            // Fresh download trigger
             html2pdf().set(options).from(element).save();
         };
 
@@ -320,6 +307,5 @@
         applyFilters();
     </script>
 </body>
-</html>
->
-    
+    </html>
+                    
