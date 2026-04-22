@@ -58,7 +58,8 @@
                 <p class="text-[7px] font-bold text-indigo-500 uppercase tracking-widest">Traders IQ • Adhikari Official</p>
             </div>
             
-            <div class="w-16"></div> </div>
+            <div class="w-16"></div> 
+        </div>
     </nav>
 
     <main class="max-w-4xl mx-auto mt-12 px-6 space-y-8">
@@ -74,7 +75,7 @@
             <div class="bg-slate-50 rounded-2xl p-6 flex justify-between items-center border border-slate-100">
                 <div>
                     <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Status</p>
-                    <h3 class="text-lg font-black text-indigo-600 uppercase">Pro Trader Active</h3>
+                    <h3 id="userStatusLabel" class="text-lg font-black text-indigo-600 uppercase">Checking...</h3>
                 </div>
                 <button onclick="window.location.href='https://app.lemonsqueezy.com/my-orders'" class="px-8 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:scale-105 transition-all">Manage Billing</button>
             </div>
@@ -108,8 +109,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, deleteUser } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-        import { getFirestore, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, deleteUser } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
@@ -123,6 +124,21 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // Individual User Data Loading Logic
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    document.getElementById('userStatusLabel').innerText = userData.isPro ? "Pro Trader Active" : "Free Tier";
+                } else {
+                    document.getElementById('userStatusLabel').innerText = "Free Tier";
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
 
         // Modal Controls
         window.openModal = (id) => document.getElementById(id).classList.add('active');
@@ -151,15 +167,12 @@
             btn.disabled = true;
 
             try {
-                // Critical step: Re-verify before data wipe
                 await reauthenticateWithCredential(user, credential);
                 
-                // Wipe Firestore Document
+                // Individual User Data Wipe
                 await deleteDoc(doc(db, "users", user.uid));
                 
-                // Remove Auth User
                 await deleteUser(user);
-                
                 window.location.href = 'index.html';
             } catch (err) {
                 alert("Auth Failed: Incorrect password or session timeout.");
