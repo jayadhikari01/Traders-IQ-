@@ -93,7 +93,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* Eye Icon Style */
         .password-container {
             position: relative;
             width: 100%;
@@ -170,8 +169,8 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
@@ -179,9 +178,7 @@
             projectId: "traders-iq-app-f5169", 
             storageBucket: "traders-iq-app-f5169.firebasestorage.app", 
             messagingSenderId: "411253913617", 
-            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0",
-            // Updated Client ID
-            clientId: "411253913617-ep3qfta9fcpuh3t82m43i30bombsd3s3.apps.googleusercontent.com"
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0" 
         };
         
         const app = initializeApp(firebaseConfig);
@@ -209,10 +206,12 @@
             setTimeout(() => { toast.style.display = 'none'; }, 4000);
         };
 
-        // Logic to redirect after Google Login
         onAuthStateChanged(auth, (user) => {
-            if (user && (user.providerData[0].providerId === 'google.com' || user.emailVerified)) {
-                window.location.href = 'payment.html';
+            if (user) {
+                const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+                if (isGoogleUser || user.emailVerified) {
+                    window.location.href = 'payment.html';
+                }
             }
         });
 
@@ -223,9 +222,13 @@
             createUserWithEmailAndPassword(auth, email, pass).then((userCredential) => {
                 sendEmailVerification(userCredential.user).then(() => {
                     showToast("Verification link sent! Check your Gmail.");
-                    auth.signOut().then(() => {
-                        setTimeout(() => { window.location.href = "login.html"; }, 3000);
-                    });
+                    setTimeout(() => { 
+                        auth.signOut().then(() => {
+                            window.location.href = "login.html"; 
+                        });
+                    }, 3000);
+                }).catch(err => {
+                    showToast("Error sending email: " + err.message);
                 });
             }).catch(err => { showToast(err.message); });
         };
