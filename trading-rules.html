@@ -23,6 +23,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
+        // Exposing to window for access in script tags
         window.db = db;
         window.doc = doc;
         window.getDoc = getDoc;
@@ -122,6 +123,7 @@
         let ruleToDeleteIndex = null;
         let rulesData = [];
 
+        // Auth state listener: Ensures individual user data is handled
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -131,37 +133,48 @@
             }
         });
 
+        // Load data from unique user document in Firestore
         async function loadData() {
             if (!currentUser) return;
-            const docRef = window.doc(window.db, "users", currentUser.uid);
-            const docSnap = await window.getDoc(docRef);
-            if (docSnap.exists()) {
-                rulesData = docSnap.data().rules || [];
-            } else {
-                rulesData = [
-                    { text: "Check High Impact News", checked: false },
-                    { text: "HTF Trend Alignment", checked: false },
-                    { text: "Risk Per Trade Calculated", checked: false }
-                ];
+            try {
+                const docRef = window.doc(window.db, "users", currentUser.uid);
+                const docSnap = await window.getDoc(docRef);
+                
+                if (docSnap.exists() && docSnap.data().rules) {
+                    rulesData = docSnap.data().rules;
+                } else {
+                    // Default rules for new users
+                    rulesData = [
+                        { text: "Check High Impact News", checked: false },
+                        { text: "HTF Trend Alignment", checked: false },
+                        { text: "Risk Per Trade Calculated", checked: false }
+                    ];
+                }
+                renderRules();
+            } catch (error) {
+                console.error("Error loading user rules:", error);
             }
-            renderRules();
         }
 
-        // Manual Save function: Only triggered by Save Button
+        // Manual Save: Saves specifically to the logged-in user's UID
         window.manualSave = async function() {
             if (!currentUser) return;
             
-            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            try {
+                const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-            await window.setDoc(window.doc(window.db, "users", currentUser.uid), { 
-                rules: rulesData,
-                lastUpdated: window.serverTimestamp(),
-                userTimezone: userTimezone
-            }, { merge: true });
+                await window.setDoc(window.doc(window.db, "users", currentUser.uid), { 
+                    rules: rulesData,
+                    lastUpdated: window.serverTimestamp(),
+                    userTimezone: userTimezone
+                }, { merge: true });
 
-            const toast = document.getElementById('saveToast');
-            toast.classList.add('active');
-            setTimeout(() => toast.classList.remove('active'), 2000);
+                const toast = document.getElementById('saveToast');
+                toast.classList.add('active');
+                setTimeout(() => toast.classList.remove('active'), 2000);
+            } catch (error) {
+                console.error("Error saving rules:", error);
+            }
         }
 
         function renderRules() {
@@ -187,13 +200,11 @@
             if (input.value.trim()) {
                 rulesData.push({ text: input.value.trim(), checked: false });
                 input.value = "";
-                // Note: Not saving to Firebase immediately
                 renderRules();
             }
         };
 
         window.toggleCheck = function(index) {
-            // Update local data state but do NOT call manualSave()
             rulesData[index].checked = !rulesData[index].checked;
         };
 
@@ -211,12 +222,10 @@
         function executeDelete() {
             if (ruleToDeleteIndex !== null) {
                 rulesData.splice(ruleToDeleteIndex, 1);
-                // Note: Not saving to Firebase immediately
                 renderRules();
             }
             cancelDelete();
         }
     </script>
 </body>
-                    </html>
-                
+</html>
