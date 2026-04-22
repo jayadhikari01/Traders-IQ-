@@ -95,7 +95,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* Eye Icon Style */
         .password-container {
             position: relative;
             width: 100%;
@@ -177,7 +176,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
         // Eye Toggle Logic
@@ -208,9 +207,7 @@
             projectId: "traders-iq-app-f5169",
             storageBucket: "traders-iq-app-f5169.firebasestorage.app",
             messagingSenderId: "411253913617",
-            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0",
-            // Updated Client ID
-            clientId: "411253913617-ep3qfta9fcpuh3t82m43i30bombsd3s3.apps.googleusercontent.com"
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -220,10 +217,7 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                if (!user.emailVerified) {
-                    showToast("Account verification required. Please check your email.");
-                    return;
-                }
+                // Email Verification check removed for instant login access
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists() && userDoc.data().isPro === true) {
                     window.location.href = 'dashboard.html'; 
@@ -242,7 +236,10 @@
             signInWithEmailAndPassword(auth, email, password).catch(err => { showToast(err.message); });
         };
 
-        document.getElementById("googleBtn").onclick = () => { signInWithRedirect(auth, provider); };
+        // Switched from Redirect to Popup for better reliability
+        document.getElementById("googleBtn").onclick = () => { 
+            signInWithPopup(auth, provider).catch(err => { showToast(err.message); }); 
+        };
     </script>
 </body>
 </html>
