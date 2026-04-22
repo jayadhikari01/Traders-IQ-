@@ -80,7 +80,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -96,7 +96,15 @@
         const auth = getAuth(app);
 
         let currentUserId = null;
-        onAuthStateChanged(auth, (user) => { if (user) currentUserId = user.uid; });
+        
+        // Listen for Auth state to get current User ID
+        onAuthStateChanged(auth, (user) => { 
+            if (user) {
+                currentUserId = user.uid; // Har user ki unique ID set ho rahi hai
+            } else {
+                currentUserId = null;
+            }
+        });
 
         function showAppToast(message, color = '#6366f1') {
             const toast = document.getElementById('toast');
@@ -109,22 +117,38 @@
         window.applyPromo = async () => {
             const code = document.getElementById('promoCode').value.trim().toUpperCase();
             if(!code) return showAppToast("Please enter a valid promo code.", "#f43f5e");
+            if (!currentUserId) return showAppToast("Log in required to apply promo.", "#f43f5e");
+
             try {
                 const promoSnap = await getDoc(doc(db, "promos", code));
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
+                    
+                    // User-specific document mein data update ho raha hai
+                    await setDoc(doc(db, "users", currentUserId), {
+                        subscriptionStatus: "active",
+                        promoUsed: code,
+                        lastUpdated: new Date().toISOString()
+                    }, { merge: true });
+
                     showAppToast("Access Unlocked! Redirecting...", "#10b981");
                     setTimeout(() => window.location.href = 'success.html', 1500);
                 } else {
                     showAppToast("Invalid or expired code.", "#f43f5e");
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e); 
+                showAppToast("Error validating code.", "#f43f5e");
+            }
         };
 
         window.openLemon = (id) => {
             if (!currentUserId) return showAppToast("Please log in to continue.", "#f43f5e");
+            
+            // Passthrough custom ID ensures correct user gets access after payment
             const url = `https://tradersiq.lemonsqueezy.com/checkout/buy/${id}?checkout[custom][user_id]=${currentUserId}`;
             LemonSqueezy.Url.Open(url);
         };
     </script>
 </body>
-</html>
+    </html>
+                    
