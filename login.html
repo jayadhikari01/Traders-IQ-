@@ -176,10 +176,17 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            onAuthStateChanged,
+            sendPasswordResetEmail 
+        } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-        // Eye Toggle Logic
+        // Eye Toggle Logic (Unchanged)
         const eyeIcon = document.getElementById('eyeIcon');
         const passwordInput = document.getElementById('password');
 
@@ -217,7 +224,6 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Email Verification check removed for instant login access
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists() && userDoc.data().isPro === true) {
                     window.location.href = 'dashboard.html'; 
@@ -227,7 +233,21 @@
             }
         });
 
-        document.getElementById("forgotBtn").onclick = () => { window.location.href = "forgot-password.html"; };
+        // Updated Forgot Password Logic: Sends link via Firebase instead of redirect
+        document.getElementById("forgotBtn").onclick = () => { 
+            const email = document.getElementById("email").value;
+            if(!email) {
+                showToast("Enter your email address to receive a reset link.");
+                return;
+            }
+            sendPasswordResetEmail(auth, email)
+                .then(() => {
+                    showToast("Elite Reset Link sent to your inbox!");
+                })
+                .catch((err) => {
+                    showToast(err.message);
+                });
+        };
 
         document.getElementById("loginBtn").onclick = () => {
             const email = document.getElementById("email").value;
@@ -236,7 +256,6 @@
             signInWithEmailAndPassword(auth, email, password).catch(err => { showToast(err.message); });
         };
 
-        // Switched from Redirect to Popup for better reliability
         document.getElementById("googleBtn").onclick = () => { 
             signInWithPopup(auth, provider).catch(err => { showToast(err.message); }); 
         };
