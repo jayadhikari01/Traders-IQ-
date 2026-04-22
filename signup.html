@@ -170,7 +170,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk", 
@@ -183,6 +184,7 @@
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
         const eyeIcon = document.getElementById('eyeIcon');
@@ -203,38 +205,73 @@
             const message = document.getElementById('toastMessage');
             message.textContent = msg;
             toast.style.display = 'flex';
-            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+            setTimeout(() => { toast.style.display = 'none'; }, 5000);
         };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+                // Redirect logic: only if verified or Google user
                 if (isGoogleUser || user.emailVerified) {
                     window.location.href = 'payment.html';
                 }
             }
         });
 
-        document.getElementById("signupBtn").onclick = () => {
+        document.getElementById("signupBtn").onclick = async () => {
+            const name = document.getElementById("name").value;
             const email = document.getElementById("email").value;
             const pass = document.getElementById("password").value;
-            if(!email || !pass) { showToast("Please fill all details"); return; }
-            createUserWithEmailAndPassword(auth, email, pass).then((userCredential) => {
-                sendEmailVerification(userCredential.user).then(() => {
-                    showToast("Verification link sent! Check your Gmail.");
-                    setTimeout(() => { 
-                        auth.signOut().then(() => {
-                            window.location.href = "login.html"; 
-                        });
-                    }, 3000);
-                }).catch(err => {
-                    showToast("Error sending email: " + err.message);
+
+            if(!name || !email || !pass) { 
+                showToast("Please fill all details"); 
+                return; 
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+
+                // Firestore integration with UID
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    displayName: name,
+                    email: email,
+                    createdAt: serverTimestamp(),
+                    isVerified: false,
+                    revenueGoal: 1000000 
                 });
-            }).catch(err => { showToast(err.message); });
+
+                await sendEmailVerification(user);
+                showToast("Verification link sent! Check your Gmail and verify to login.");
+
+                // Sign out immediately to prevent auto-login before verification
+                setTimeout(async () => { 
+                    await signOut(auth);
+                }, 1000);
+
+            } catch (err) { 
+                showToast(err.message); 
+            }
         };
 
-        document.getElementById("googleBtn").onclick = () => { 
-            signInWithPopup(auth, provider).catch(err => showToast(err.message)); 
+        document.getElementById("googleBtn").onclick = async () => { 
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // Sync Google user to Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    email: user.email,
+                    lastLogin: serverTimestamp(),
+                    provider: 'google'
+                }, { merge: true });
+
+            } catch (err) { 
+                showToast(err.message); 
+            }
         };
     </script>
 </body>
