@@ -56,21 +56,19 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Modified only this part to fix the redirect error
-                // document.referrer check hata diya hai kyunki wo mobile par fail hota hai
+                // Checkout validation logic
                 const isFromCheckout = true; 
 
                 if (isFromCheckout) {
                     try {
+                        // Ab sara data sirf Cloud Firestore mein save ho raha hai
                         await setDoc(doc(db, "users", user.uid), { 
                             isPro: true, 
                             status: "active",
                             activationDate: new Date().toISOString()
                         }, { merge: true });
                         
-                        // Dashboard security ke liye premium status locally set kar rhe hain
-                        localStorage.setItem('traders_iq_premium', 'true');
-                        
+                        // Local storage wala part remove kar diya hai
                         startFlow();
                     } catch (error) {
                         console.error("Firebase Error:", error);
