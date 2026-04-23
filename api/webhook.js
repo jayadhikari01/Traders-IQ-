@@ -1,7 +1,6 @@
 import admin from 'firebase-admin';
 import crypto from 'crypto';
 
-// 1. Firebase Admin Initialization (Vercel Environment Variables se data uthayega)
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -15,80 +14,72 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-    // Only allow POST (Lemon Squeezy sends POST)
     if (req.method !== 'POST') {
-        return res.status(405).send('Server is LIVE. Please use POST for webhooks.');
+        return res.status(405).send('Use POST for Razorpay Webhooks.');
     }
 
     try {
-        // 2. Security: Verify Lemon Squeezy Signature (Ab Secret Vercel se aayega)
         const chunks = [];
         for await (const chunk of req) {
             chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
         }
         const rawBody = Buffer.concat(chunks);
 
-        // Aapka secret ab variable se aayega
-        const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET; 
-        const signature = req.headers['x-signature'];
+        // Razorpay Verification
+        const secret = process.env.RAZORPAY_WEBHOOK_SECRET; 
+        const signature = req.headers['x-razorpay-signature'];
         const hmac = crypto.createHmac('sha256', secret);
         const digest = hmac.update(rawBody).digest('hex');
 
         if (!signature || signature !== digest) {
-            console.error('Security Check Failed: Invalid Signature');
+            console.error('Security Check Failed');
             return res.status(401).send('Invalid Signature');
         }
 
-        // 3. Parse Data
         const payload = JSON.parse(rawBody.toString());
-        const eventName = payload.meta.event_name;
+        const event = payload.event;
         
-        // Extract userId from custom_data (Very Important)
-        const userId = payload.meta.custom_data ? payload.meta.custom_data.user_id : null;
+        // Razorpay mein userId 'notes' se aayega (Jo aap checkout ke waqt bhejenge)
+        const userId = payload.payload.payment.entity.notes.user_id;
 
-        console.log(`Processing ${eventName} for User ID: ${userId}`);
+        console.log(`Processing ${event} for User: ${userId}`);
 
-        // 4. Update Firestore Logic
-        if (eventName === 'order_created' || eventName === 'subscription_created') {
+        // Update Firestore for Success
+        if (event === 'payment.captured' || event === 'order.paid') {
             if (userId) {
-                // Update the user document to PRO status
                 await db.collection('users').doc(userId).set({
                     isPro: true,
-                    plan: payload.data.attributes.variant_name || 'Premium',
-                    subscriptionId: payload.data.id,
+                    plan: payload.payload.payment.entity.notes.plan_name || 'Premium',
+                    paymentId: payload.payload.payment.entity.id,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                console.log(`User ${userId} successfully upgraded to PRO`);
-                return res.status(200).send('User Pro Status Updated');
+                return res.status(200).send('User Upgraded to PRO');
             } else {
-                console.error('Error: No UserID found in custom_data');
-                return res.status(400).send('No User ID provided');
+                return res.status(400).send('No User ID in notes');
             }
         }
 
-        // Handle Subscription Cancellation
-        if (eventName === 'subscription_expired' || eventName === 'subscription_cancelled') {
+        // Handle Payment Failure/Refund (Optional)
+        if (event === 'payment.failed' || event === 'refund.processed') {
             if (userId) {
                 await db.collection('users').doc(userId).update({
                     isPro: false,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                return res.status(200).send('User Pro Status Removed');
+                return res.status(200).send('Pro Status Removed');
             }
         }
 
-        return res.status(200).send('Webhook Received');
+        return res.status(200).send('Webhook Processed');
 
     } catch (error) {
-        console.error('Critical Webhook Error:', error.message);
-        return res.status(500).send('Internal Error: ' + error.message);
+        console.error('Webhook Error:', error.message);
+        return res.status(500).send('Error');
     }
 }
 
-// 5. Vercel Config: Disable body-parser to allow raw body reading
 export const config = {
-    api: {
-        bodyParser: false,
-    },
+    api: { bodyParser: false },
 };
+            
