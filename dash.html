@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traders IQ - Elite Command</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { background-color: #F8FAFC; font-family: 'Inter', sans-serif; color: #1E293B; }
+        .glass-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .stat-label { font-size: 10px; font-weight: 900; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        
+        .day-box { 
+            height: 65px; 
+            border-radius: 8px; 
+            background: #F1F5F9; 
+            border: 1px solid #E2E8F0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 4px 2px;
+            overflow: hidden;
+        }
+        
+        .day-num { font-size: 10px; font-weight: 700; color: #94A3B8; align-self: flex-start; margin-left: 4px; }
+        .trade-info { display: flex; flex-direction: column; align-items: center; margin-bottom: 2px; width: 100%; }
+        .trade-count { font-size: 8px; font-weight: 700; color: inherit; opacity: 0.7; line-height: 1; }
+        .day-pnl { font-size: 9px; font-weight: 900; margin-top: 1px; }
+        .pips-win { background: #DCFCE7 !important; border-color: #86EFAC !important; color: #166534 !important; }
+        .pips-loss { background: #FEE2E2 !important; border-color: #FCA5A5 !important; color: #991B1B !important; }
+        .weekday-label { font-size: 10px; font-weight: 900; color: #CBD5E1; text-align: center; margin-bottom: 8px; }
+        .filter-btn { font-size: 10px; font-weight: 800; padding: 4px 12px; border-radius: 8px; transition: all 0.2s; border: 1px solid #E2E8F0; color: #64748B; }
+        .filter-btn.active { background: #4F46E5; color: white; border-color: #4F46E5; }
+        .ai-badge { font-size: 8px; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+
+        #chatWindow { display: none; flex-direction: column; }
+        .chat-msg { margin-bottom: 12px; padding: 10px 14px; border-radius: 16px; font-size: 13px; max-width: 90%; line-height: 1.5; font-weight: 500; }
+        .user-msg { background: #4F46E5; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .iq-msg { background: #FFFFFF; color: #1E293B; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .typing-dots span { width: 4px; height: 4px; background: #94A3B8; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    </style>
+</head>
+<body class="p-4 pb-32">
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+      import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+        authDomain: "traders-iq-app-f5169.firebaseapp.com",
+        projectId: "traders-iq-app-f5169",
+        storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+        messagingSenderId: "411253913617",
+        appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0",
+        measurementId: "G-6LX6KBFVQF"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      window.currentTrades = [];
+
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              const userDocRef = doc(db, "users", user.uid);
+              
+              onSnapshot(userDocRef, (docSnap) => {
+                  if (docSnap.exists()) {
+                      const userData = docSnap.data();
+
+                      // FIX: database mein 'status' field hai, isliye wahi check kar rahe hain
+                      const currentStatus = userData.status || userData.paymentStatus || "";
+
+                      if (currentStatus !== "active") {
+                          window.location.href = "payment.html"; 
+                          return;
+                      }
+
+                      window.currentTrades = userData.trades || [];
+                      window.render(); 
+                  } else {
+                      window.location.href = "payment.html";
+                  }
+              });
+          } else {
+              window.location.href = "login.html"; 
+          }
+      });
+    </script>
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        <header class="flex justify-between items-center py-2 px-1">
+            <div>
+                <h1 id="greetingText" class="text-xs font-black text-indigo-600 uppercase tracking-widest">Morning, Trader 👋</h1>
+                <p class="text-2xl font-black text-slate-900 tracking-tighter">Command Center</p>
+            </div>
+            <a href="profile.html" id="profileIcon" class="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg overflow-hidden">
+                JD
+            </a>
+        </header>
+
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div class="glass-card p-4 border-l-4 border-indigo-600"><span class="stat-label">Total PnL</span><div id="totalPnl" class="text-lg font-black mt-1">$0.00</div></div>
+            <div class="glass-card p-4"><span class="stat-label">Win Rate</span><div id="winRate" class="text-lg font-black mt-1">0%</div></div>
+            <div class="glass-card p-4"><span class="stat-label">Avg Win</span><div id="avgWin" class="text-lg font-black mt-1 text-emerald-600">$0</div></div>
+            <div class="glass-card p-4"><span class="stat-label">Avg Loss</span><div id="avgLoss" class="text-lg font-black mt-1 text-rose-600">$0</div></div>
+            <div class="glass-card p-4"><span class="stat-label">Profit Factor</span><div id="profitFactor" class="text-lg font-black mt-1">0.00</div></div>
+            <div class="glass-card p-4 border-l-4 border-slate-900 bg-slate-50"><span class="stat-label">Today PnL</span><div id="todayPnl" class="text-lg font-black mt-1">$0.00</div></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="glass-card p-4 border-b-4 border-green-500 text-center"><span class="stat-label">Wins</span><div id="wins" class="text-lg font-black text-green-600">0</div></div>
+                <div class="glass-card p-4 border-b-4 border-red-500 text-center"><span class="stat-label">Losses</span><div id="losses" class="text-lg font-black text-red-600">0</div></div>
+                <div class="glass-card p-4 border-b-4 border-slate-400 text-center"><span class="stat-label">BE</span><div id="breakevens" class="text-lg font-black text-slate-600">0</div></div>
+                <div class="glass-card p-4 border-b-4 border-indigo-500 text-center"><span class="stat-label">Total</span><div id="dispTotalTrades" class="text-lg font-black text-indigo-600">0</div></div>
+            </div>
+            <button onclick="location.href='journal.html'" class="w-full h-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all">Add New Trade</button>
+        </div>
+
+        <div class="glass-card p-5 border-l-4 border-slate-900 bg-slate-50/50">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                    <span class="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></span>
+                    Traders IQ Advance Audit
+                </span>
+                <span class="text-[9px] font-black bg-slate-900 text-white px-3 py-1 rounded-full uppercase tracking-tighter">Powered by IQ AI</span>
+            </div>
+            <div id="aiAnalysisContainer" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div id="psycheAuditContent">
+                    <span class="ai-badge bg-indigo-100 text-indigo-700">Performance Identity</span>
+                    <div class="text-xs font-bold text-slate-400 mt-2 italic">Scanning...</div>
+                </div>
+                <div id="habitAuditContent" class="md:border-l border-slate-200 md:pl-6">
+                    <span class="ai-badge bg-emerald-100 text-emerald-700">Execution Quality</span>
+                    <div class="text-xs font-bold text-slate-400 mt-2 italic">Auditing...</div>
+                </div>
+                <div id="psychoMetricsContent" class="md:border-l border-slate-200 md:pl-6">
+                    <span class="ai-badge bg-rose-100 text-rose-700">Psychology</span>
+                    <div class="text-xs font-bold text-slate-400 mt-2 italic">Analyzing Mindset...</div>
+                </div>
+                <div id="aiMathContent" class="md:border-l border-slate-200 md:pl-6">
+                    <span class="ai-badge bg-amber-100 text-amber-700">Edge Projection</span>
+                    <div class="text-xs font-bold text-slate-400 mt-2 italic">Calculating...</div>
+                </div>
+            </div>
+            <div id="aiTradingTip" class="mt-4 pt-4 border-t border-slate-200">
+                <div class="flex items-start gap-2">
+                    <span class="text-[10px] font-black text-indigo-600 uppercase bg-indigo-50 px-2 py-0.5 rounded">IQ TIP:</span>
+                    <p id="tipContent" class="text-[11px] font-bold text-slate-600">Waiting for data analysis...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <div class="flex justify-between items-center mb-4">
+                <span class="stat-label">Equity Growth</span>
+                <div class="flex gap-1">
+                    <button onclick="updateChartFilter('today', this)" class="filter-btn">Today</button>
+                    <button onclick="updateChartFilter('7d', this)" class="filter-btn">7D</button>
+                    <button onclick="updateChartFilter('30d', this)" class="filter-btn">30D</button>
+                    <button onclick="updateChartFilter('all', this)" class="filter-btn active">All</button>
+                </div>
+            </div>
+            <div class="h-64 w-full"><canvas id="equityChart"></canvas></div>
+        </div>
+
+        <div class="glass-card p-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div>
+                    <span class="text-sm font-black text-slate-700 uppercase tracking-tight">Daily Summary</span>
+                    <div class="flex items-center gap-3 mt-2">
+                        <button onclick="changeMonth(-1)" class="p-1 hover:bg-slate-100 rounded-lg border border-slate-200"><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M15 19l-7-7 7-7"/></svg></button>
+                        <p id="currentMonthYearDisplay" class="text-xs font-bold text-slate-600 min-w-[80px] text-center uppercase">Month</p>
+                        <button onclick="changeMonth(1)" class="p-1 hover:bg-slate-100 rounded-lg border border-slate-200"><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M9 5l7 7-7 7"/></svg></button>
+                    </div>
+                </div>
+                <div class="bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 flex items-center gap-3">
+                    <span class="stat-label !mb-0">Month PnL:</span>
+                    <span id="monthlyTotalPnl" class="text-sm font-black">$0.00</span>
+                </div>
+            </div>
+            <div class="calendar-grid">
+                <div class="weekday-label">S</div><div class="weekday-label">M</div><div class="weekday-label">T</div><div class="weekday-label">W</div><div class="weekday-label">T</div><div class="weekday-label">F</div><div class="weekday-label">S</div>
+            </div>
+            <div class="calendar-grid" id="dailySummaryGrid"></div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-28 right-6 z-[60]">
+        <button onclick="toggleChat()" class="h-14 w-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all border-4 border-white">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 2.98.98 4.27L2 22l5.73-1.1c1.29.62 2.73.98 4.27.98 5.52 0 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+        </button>
+        <div id="chatWindow" class="absolute bottom-16 right-0 w-[340px] max-h-[520px] bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col">
+            <div class="bg-indigo-600 p-5 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span class="text-xs font-black uppercase tracking-widest">IQ AI Assistant</span>
+                </div>
+                <button onclick="toggleChat()" class="text-white/70 hover:text-white">✕</button>
+            </div>
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 min-h-[300px]">
+                <div class="chat-msg iq-msg">Hello! I'm your IQ AI. I've finished a deep scan of your data. Need a detailed journal analysis? Just ask for "Detailed Analysis".</div>
+            </div>
+            <form onsubmit="event.preventDefault(); sendMessage();" class="p-4 bg-white border-t border-slate-100 flex gap-2">
+                <input id="chatInput" type="text" placeholder="Type 'Detailed Analysis'..." class="flex-1 text-sm bg-slate-100 border-none rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-600 outline-none">
+                <button type="submit" class="bg-indigo-600 text-white p-2 rounded-xl">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-lg bg-slate-900 rounded-[2.5rem] p-2 flex justify-between items-center shadow-2xl z-50">
+        <a href="dashboard.html" class="p-4 text-white bg-white/10 rounded-[2rem]"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></a>
+        <a href="position-sizing.html" class="p-4 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></a>
+        <a href="backtest-lab.html" class="p-4 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg></a>
+        <a href="trading-rules.html" class="p-4 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></a>
+        <a href="profile.html" class="p-4 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></a>
+    </nav>
+
+    <script>
+        const getTrades = () => window.currentTrades || [];
+        let viewDate = new Date(); 
+        let chartInstance = null;
+
+        function updateProfileIcon() {
+            const profileData = JSON.parse(localStorage.getItem('traders_iq_profile')) || {};
+            const iconElement = document.getElementById('profileIcon');
+            if (profileData.image) {
+                iconElement.innerHTML = `<img src="${profileData.image}" class="h-full w-full object-cover">`;
+            } else {
+                const name = profileData.name || "John Doe";
+                const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                iconElement.innerText = initials || "JD";
+            }
+        }
+
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            const greetingElement = document.getElementById('greetingText');
+            let greeting = hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : hour < 21 ? "Evening" : "Night";
+            greetingElement.innerText = `${greeting}, Trader 👋`;
+        }
+
+        function parseCustomDate(dateStr) {
+            if(!dateStr) return new Date(NaN);
+            let d;
+            if(dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                d = new Date(Date.UTC(parts[2], parts[1] - 1, parts[0]));
+            } else {
+                d = new Date(dateStr);
+            }
+            return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+        }
+
+        window.render = function() {
+            const trades = getTrades();
+            updateProfileIcon(); 
+            updateGreeting(); 
+            
+            let total = 0, wins = 0, losses = 0, be = 0, grossWin = 0, grossLoss = 0;
+            let totalRR = 0, countWithRR = 0, todayTotal = 0;
+            const now = new Date();
+            const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
+            trades.forEach(t => {
+                const pnlVal = parseFloat(t.pnl) || 0;
+                total += pnlVal;
+                const tradeDate = parseCustomDate(t.date);
+                if(!isNaN(tradeDate) && tradeDate.getTime() === todayUTC) todayTotal += pnlVal;
+                let tradeRR = parseFloat(t.rr) || 0;
+                if(tradeRR > 0) { totalRR += tradeRR; countWithRR++; }
+                if(pnlVal > 0.01) { wins++; grossWin += pnlVal; } 
+                else if(pnlVal < -0.01) { losses++; grossLoss += Math.abs(pnlVal); } 
+                else be++;
+            });
+
+            document.getElementById('totalPnl').innerText = (total >= 0 ? '+' : '-') + '$' + Math.abs(total).toFixed(2);
+            document.getElementById('totalPnl').style.color = total >= 0 ? '#10B981' : '#EF4444';
+            document.getElementById('todayPnl').innerText = (todayTotal >= 0 ? '+' : '-') + '$' + Math.abs(todayTotal).toFixed(2);
+            document.getElementById('todayPnl').style.color = todayTotal >= 0 ? '#10B981' : '#EF4444';
+            document.getElementById('winRate').innerText = trades.length ? Math.round((wins/trades.length)*100) + '%' : '0%';
+            document.getElementById('avgWin').innerText = wins > 0 ? '$' + Math.round(grossWin / wins) : '$0';
+            document.getElementById('avgLoss').innerText = losses > 0 ? '$' + Math.round(grossLoss / losses) : '$0';
+            document.getElementById('profitFactor').innerText = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : (grossWin > 0 ? "1.00" : "0.00");
+            document.getElementById('wins').innerText = wins; 
+            document.getElementById('losses').innerText = losses;
+            document.getElementById('breakevens').innerText = be;
+            document.getElementById('dispTotalTrades').innerText = trades.length;
+            
+            renderCalendar();
+            updateChartFilter('all', document.querySelector('.filter-btn.active'));
+            runAdvancedAI(total, wins, losses, grossWin, grossLoss, trades.length, (totalRR/countWithRR || 0));
+        }
+
+        function runAdvancedAI(total, wins, losses, gWin, gLoss, count, avgRR) {
+            const psycheBox = document.getElementById('psycheAuditContent');
+            const habitBox = document.getElementById('habitAuditContent');
+            const mathBox = document.getElementById('aiMathContent');
+            const psychoMetricsBox = document.getElementById('psychoMetricsContent'); 
+            const tipContent = document.getElementById('tipContent'); 
+            
+            if(count < 1) return;
+            const winRate = (wins/count);
+            const avgW = gWin/wins || 0;
+            const avgL = gLoss/losses || 0;
+
+            psycheBox.innerHTML = `<span class="ai-badge bg-indigo-100 text-indigo-700">Performance Identity</span><div class="mt-2 space-y-1"><div class="flex justify-between text-[11px] font-bold"><span>Archetype</span><span class="text-indigo-600">${avgRR > 2.2 ? "Sniper" : "Scalper"}</span></div><div class="flex justify-between text-[11px] font-bold"><span>Strike Rate</span><span class="text-indigo-600">${(winRate*100).toFixed(1)}%</span></div></div>`;
+
+            let mistakes = {};
+            getTrades().forEach(t => { if(t.mistake && t.mistake !== "None") mistakes[t.mistake] = (mistakes[t.mistake] || 0) + 1; });
+            const topMistake = Object.keys(mistakes).length > 0 ? Object.keys(mistakes).reduce((a, b) => mistakes[a] > mistakes[b] ? a : b) : "Perfect Execution";
+
+            habitBox.innerHTML = `<span class="ai-badge bg-emerald-100 text-emerald-700">Execution Quality</span><div class="mt-2 space-y-1"><div class="flex justify-between text-[11px] font-bold"><span>Main Mistake</span><span class="${topMistake === 'Perfect Execution' ? 'text-emerald-600' : 'text-rose-600'}">${topMistake}</span></div><div class="flex justify-between text-[11px] font-bold"><span>Total Audited</span><span class="text-slate-700">${count} Trades</span></div></div>`;
+
+            const psychoScore = topMistake === "Perfect Execution" ? 98 : Math.max(40, 100 - (Object.keys(mistakes).length * 12));
+            psychoMetricsBox.innerHTML = `<span class="ai-badge bg-rose-100 text-rose-700">Psychology</span><div class="mt-2 space-y-1"><div class="flex justify-between text-[11px] font-bold"><span>Mindset Score</span><span class="text-rose-600">${psychoScore}%</span></div><div class="flex justify-between text-[11px] font-bold"><span>Consistency</span><span class="text-slate-700">${psychoScore > 80 ? 'Stable' : 'Volatile'}</span></div></div>`;
+
+            const expectancy = (winRate * avgW) - ((1 - winRate) * avgL);
+            const projection = total + (expectancy * 30); 
+
+            mathBox.innerHTML = `<span class="ai-badge bg-amber-100 text-amber-700">Edge Projection</span><div class="mt-2 space-y-1"><div class="flex justify-between text-[11px] font-bold"><span>Expectancy</span><span class="${expectancy >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${expectancy >= 0 ? '+' : ''}$${expectancy.toFixed(2)}</span></div><div class="flex justify-between text-[11px] font-bold"><span>Forecast</span><span class="${projection >= total ? 'text-indigo-600' : 'text-rose-600'}">$${Math.round(projection)}</span></div></div>`;
+
+            tipContent.innerText = topMistake === "Perfect Execution" ? "Consistency is your power. Maintain current discipline." : `Warning: '${topMistake}' is draining your capital. Tighten up rules.`;
+        }
+
+        function toggleChat() {
+            const win = document.getElementById('chatWindow');
+            win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const container = document.getElementById('chatMessages');
+            const val = input.value.trim();
+            const trades = getTrades();
+            if(!val) return;
+
+            container.innerHTML += `<div class="chat-msg user-msg">${val}</div>`;
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            const typingId = "typing-" + Date.now();
+            container.innerHTML += `<div id="${typingId}" class="chat-msg iq-msg"><div class="typing-dots"><span></span> <span></span> <span></span></div></div>`;
+            container.scrollTop = container.scrollHeight;
+            
+            setTimeout(() => {
+                document.getElementById(typingId)?.remove();
+                let response = "";
+                const msg = val.toLowerCase();
+                
+                let wins = 0, totalPnl = 0, gWin = 0, gLoss = 0, mistakes = {};
+                trades.forEach(t => {
+                    let p = parseFloat(t.pnl) || 0;
+                    totalPnl += p;
+                    if(p > 0.01) { wins++; gWin += p; } else if(p < -0.01) { gLoss += Math.abs(p); }
+                    if(t.mistake && t.mistake !== "None") mistakes[t.mistake] = (mistakes[t.mistake] || 0) + 1;
+                });
+
+                const wr = trades.length ? Math.round((wins/trades.length)*100) : 0;
+                const avgW = Math.round(gWin/wins || 0);
+                const avgL = Math.round(gLoss/(trades.length-wins) || 0);
+
+                if(msg.includes("analysis") || msg.includes("analyze") || msg.includes("detail") || msg.includes("report")) {
+                    let mistakeTable = Object.entries(mistakes).map(([m, c]) => `• ${m}: <b>${c} times</b>`).join('<br>');
+                    response = `<div class="space-y-3">
+                        <div class="text-indigo-600 font-black border-b border-indigo-100 pb-1">COMMAND CENTER DEEP ANALYSIS</div>
+                        <div><b>1. Stats Summary:</b> Accuracy is ${wr}% with a total PnL of ${totalPnl >= 0 ? '+$' : '-$'}${Math.abs(totalPnl).toFixed(2)}.</div>
+                        <div><b>2. Risk Analysis:</b> On average, your wins are $${avgW} and losses are $${avgL}. 
+                             ${avgW > avgL ? '<span class="text-emerald-600">Reward ratio is healthy.</span>' : '<span class="text-rose-600">Warning: Losses are bigger than wins.</span>'}</div>
+                        <div><b>3. Mistake Log:</b><br>${mistakeTable || "No mistakes found! Pure discipline."}</div>
+                        <div class="bg-indigo-50 p-2 rounded-lg text-xs"><b>AI NEXT STEP:</b> ${totalPnl < 0 ? "Identify the patterns behind your top mistake and skip trading for a day to reset." : "You have a proven edge. Focus on position sizing to scale faster."}</div>
+                    </div>`;
+                } else {
+                    response = `I have analyzed ${trades.length} trades. Your win-rate is ${wr}%. For a full breakdown of your behavior and risk, type <b>"Detailed Analysis"</b>.`;
+                }
+
+                container.innerHTML += `<div class="chat-msg iq-msg">${response}</div>`;
+                container.scrollTop = container.scrollHeight;
+            }, 1000);
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('dailySummaryGrid');
+            const monthDisplay = document.getElementById('currentMonthYearDisplay');
+            const monthlyPnlDisplay = document.getElementById('monthlyTotalPnl');
+            const year = viewDate.getFullYear(), month = viewDate.getMonth();
+            monthDisplay.innerText = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
+            const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+            grid.innerHTML = '';
+            let monthPnl = 0, dailyStats = {};
+            getTrades().forEach(t => {
+                const d = parseCustomDate(t.date);
+                if(d.getUTCFullYear() === year && d.getUTCMonth() === month) {
+                    const day = d.getUTCDate(); const pnl = parseFloat(t.pnl) || 0;
+                    if(!dailyStats[day]) dailyStats[day] = { pnl: 0, count: 0 };
+                    dailyStats[day].pnl += pnl; dailyStats[day].count += 1; monthPnl += pnl;
+                }
+            });
+            for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day-box opacity-0"></div>`;
+            for(let i=1; i<=daysInMonth; i++) {
+                const day = dailyStats[i];
+                let state = day ? (day.pnl > 0.01 ? 'pips-win' : (day.pnl < -0.01 ? 'pips-loss' : '')) : '';
+                grid.innerHTML += `<div class="day-box ${state}"><span class="day-num">${i}</span><div class="trade-info">${day ? `<span class="trade-count">${day.count} ⇆</span> <span class="day-pnl">${Math.round(day.pnl)}</span>` : ''}</div></div>`;
+            }
+            monthlyPnlDisplay.innerText = (monthPnl >= 0 ? '+' : '-') + '$' + Math.abs(monthPnl).toFixed(2);
+            monthlyPnlDisplay.className = `text-sm font-black ${monthPnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+        }
+
+        function updateChartFilter(period, btn) {
+            if(!btn) return;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const now = new Date(), todayUTC = new Date(now.setHours(0,0,0,0)).getTime();
+            let filteredTrades = getTrades().filter(t => {
+                const tTime = parseCustomDate(t.date).getTime();
+                if(period === 'today') return tTime === todayUTC;
+                if(period === '7d') return (todayUTC - tTime) / (86400000) <= 7;
+                if(period === '30d') return (todayUTC - tTime) / (86400000) <= 30;
+                return true;
+            });
+            let runningTotal = 0, labels = ['Start'], data = [0];
+            filteredTrades.sort((a,b) => parseCustomDate(a.date) - parseCustomDate(b.date)).forEach((t, i) => { 
+                runningTotal += (parseFloat(t.pnl) || 0); labels.push(`#${i+1}`); data.push(runningTotal); 
+            });
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(document.getElementById('equityChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: labels, datasets: [{ data: data, borderColor: '#4F46E5', borderWidth: 3, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.04)', tension: 0.4, pointRadius: 2 }]},
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 10, weight: 'bold' }, color: '#94A3B8' } } } }
+            });
+        }
+
+        function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderCalendar(); }
+    </script>
+</body>
+</html>
