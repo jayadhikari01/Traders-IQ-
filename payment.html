@@ -163,7 +163,10 @@
             if(!code) return showAppToast("Please enter a valid promo code.", "#f43f5e");
             
             try {
+                // 'promos' collection small mein aur Document ID (code) capital mein fetch hoga
                 const promoSnap = await getDoc(doc(db, "promos", code));
+                
+                // Firestore mein field 'status' aur value 'active' dono small letters mein honi chahiye
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
                     activeDiscountCode = code;
                     showAppToast(`Promo "${code}" applied! Select your plan.`, "#10b981");
@@ -190,5 +193,4 @@
         };
     </script>
 </body>
-    </html>
-                    
+</html>
