@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Trader Profile | Traders IQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { background-color: #F8FAFC; font-family: 'Plus Jakarta Sans', sans-serif; color: #0F172A; overflow-x: hidden; }
+        .glass-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 2rem; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
+        .stat-label { font-size: 11px; font-weight: 800; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; }
+        .input-field { background: #F1F5F9; border: 2px solid transparent; border-radius: 1.25rem; padding: 14px; width: 100%; font-weight: 700; outline: none; transition: all 0.2s; }
+        .input-field:focus { border-color: #4F46E5; background: #FFFFFF; }
+        
+        .style-chip { padding: 10px 16px; border-radius: 1rem; border: 2px solid #E2E8F0; font-size: 12px; font-weight: 800; color: #64748B; cursor: pointer; transition: all 0.2s; text-align: center; flex: 1; }
+        .style-chip.active { background: #4F46E5; border-color: #4F46E5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+        .stat-box { background: #F8FAFC; padding: 1.25rem; border-radius: 1.5rem; border: 1px solid #E2E8F0; text-align: center; }
+        .stat-box-full { background: #F8FAFC; padding: 1.25rem; border-radius: 1.5rem; border: 1px solid #E2E8F0; text-align: center; margin-top: 1rem; }
+        .stat-val { font-size: 1.25rem; font-weight: 900; }
+
+        #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: #0F172A; color: white; padding: 12px 24px; border-radius: 1rem; font-weight: 800; font-size: 13px; z-index: 2000; transition: all 0.5s; }
+        #toast.show { top: 24px; }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-card { width: 90%; max-width: 320px; }
+        .modal-btn { width: 100%; padding: 12px; border-radius: 1rem; font-weight: 800; font-size: 12px; margin-top: 8px; cursor: pointer; }
+
+        .reward-banner { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: linear-gradient(135deg, #4F46E5, #9333EA); color: white; padding: 30px; border-radius: 2.5rem; text-align: center; z-index: 3000; display: none; box-shadow: 0 30px 60px -12px rgba(79, 70, 229, 0.5); border: 4px solid rgba(255,255,255,0.2); width: 85%; max-width: 320px; }
+        .reward-banner.show { display: block; animation: bannerPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes bannerPop { 100% { transform: translate(-50%, -50%) scale(1); } }
+
+        .avatar-container { position: relative; width: 85px; height: 85px; }
+        .avatar-preview { width: 100%; height: 100%; border-radius: 2rem; object-fit: cover; background: #4F46E5; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 1.8rem; overflow: hidden; border: 4px solid white; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .edit-badge { position: absolute; bottom: -2px; right: -2px; background: #4F46E5; border: 3px solid white; border-radius: 12px; padding: 5px; cursor: pointer; color: white; }
+        
+        .gauge-track { background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981); height: 12px; border-radius: 6px; position: relative; }
+        .gauge-needle { position: absolute; top: -4px; width: 20px; height: 20px; background: white; border: 4px solid #0F172A; border-radius: 50%; transition: left 0.5s; }
+        
+        .achievement-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 5px 2px 15px 2px; scrollbar-width: none; }
+        .badge-item { flex: 0 0 auto; width: 85px; background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 1.5rem; padding: 12px 8px; text-align: center; opacity: 0.25; filter: grayscale(1); transition: all 0.3s; position: relative; cursor: not-allowed; }
+        .badge-item.unlocked { opacity: 0.7; filter: grayscale(0.5); cursor: pointer; border-color: #f59e0b; background: #FFFBEB; }
+        .badge-item.claimed { opacity: 1; filter: grayscale(0); border-color: #4F46E5; background: #EEF2FF; transform: translateY(-3px); cursor: default; }
+        .claim-dot { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: none; }
+        .badge-item.unlocked:not(.claimed) .claim-dot { display: block; animation: pulse 1s infinite; border: 2px solid white; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="p-4 pb-32">
+
+    <div id="toast">Successfully Saved</div>
+
+    <div id="rewardBanner" class="reward-banner">
+        <div class="text-5xl mb-4" id="bannerIcon">🏆</div>
+        <h2 class="text-2xl font-black mb-1">ACHIEVEMENT!</h2>
+        <p id="bannerTitle" class="text-sm font-bold uppercase tracking-widest mb-4">Master Scalper</p>
+        <div class="bg-white/20 rounded-2xl py-3 mb-6">
+            <span class="text-xs font-black">TRADER XP GAINED</span>
+            <div class="text-xl font-black" id="bannerXP">+500 XP</div>
+        </div>
+        <button onclick="closeBanner()" class="w-full py-4 bg-white text-indigo-600 rounded-xl font-black uppercase text-xs">Collect & Continue</button>
+    </div>
+
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-card glass-card p-6 text-center">
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h3 class="font-black text-slate-800 mb-2 uppercase tracking-tighter" id="modalTitle">Confirm Action</h3>
+            <p class="text-[11px] text-slate-500 mb-6 font-bold uppercase" id="modalText">Please confirm to proceed.</p>
+            <button id="modalConfirm" class="modal-btn bg-indigo-600 text-white shadow-lg shadow-indigo-100 uppercase tracking-widest">Confirm</button>
+            <button onclick="closeModal()" class="modal-btn bg-slate-100 text-slate-600 uppercase tracking-widest mt-2">Cancel</button>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto space-y-6">
+        <header class="flex justify-between items-center px-2">
+            <div class="flex gap-3">
+                <button onclick="window.history.back()" class="h-12 w-12 glass-card flex items-center justify-center text-slate-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M15 18l-6-6 6-6"/></svg></button>
+                <button onclick="window.location.href='settings.html'" class="h-12 w-12 glass-card flex items-center justify-center text-slate-600 hover:text-indigo-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </button>
+            </div>
+            <div class="flex flex-col items-end">
+                <span class="stat-label text-[9px]">Global Rank</span>
+                <span id="globalRank" class="font-black text-indigo-600 text-sm">#--</span>
+            </div>
+        </header>
+
+        <div class="glass-card p-6">
+            <div class="flex items-start gap-5">
+                <div class="avatar-container">
+                    <div id="mainAvatarPreview" class="avatar-preview">JD</div>
+                    <label for="avatarInput" class="edit-badge"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg></label>
+                    <input type="file" id="avatarInput" class="hidden" accept="image/*" onchange="previewAvatar(this)">
+                </div>
+                <div class="flex-1">
+                    <h2 id="dispName" class="text-2xl font-black text-slate-900 leading-tight">Junior Trader</h2>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span id="dispStyle" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Scalper</span>
+                        <span class="h-1 w-1 rounded-full bg-slate-300"></span>
+                        <span class="text-[10px] font-black text-amber-500 uppercase" id="xpText">0 XP</span>
+                    </div>
+                    <p id="dispBio" class="text-xs font-bold text-slate-400 italic leading-relaxed mt-1">"Your philosophy will appear here..."</p>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box"><div id="statTrades" class="stat-val text-slate-900">0</div><span class="stat-label">Trades</span></div>
+                <div class="stat-box"><div id="statWinRate" class="stat-val text-indigo-600">0%</div><span class="stat-label">Win Rate</span></div>
+            </div>
+            <div class="stat-box-full"><div id="statPnL" class="stat-val text-emerald-600">+$0</div><span class="stat-label">Overall PnL</span></div>
+        </div>
+
+        <div class="glass-card p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="stat-label">Monthly PnL Goal</span>
+                <div class="flex items-center gap-1 font-black text-indigo-600 text-xl">
+                    <span>$</span><input type="number" id="pnlTarget" class="w-24 text-right bg-transparent outline-none" value="5000">
+                </div>
+            </div>
+            <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden">
+                <div id="goalProgress" class="bg-indigo-600 h-full w-[0%] transition-all duration-1000 shadow-lg shadow-indigo-200"></div>
+            </div>
+            <div class="flex justify-between text-[11px] font-black uppercase text-slate-400">
+                <span>Current: <span id="currentGoalVal" class="text-slate-900">$0</span></span>
+                <span>Target: <span id="targetGoalVal" class="text-slate-900">$5000</span></span>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 space-y-6">
+            <div class="flex items-center justify-between mb-4 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+                <div>
+                    <div class="font-black text-slate-800 text-sm">Experience Level</div>
+                    <div class="text-[10px] font-bold text-indigo-500 uppercase" id="levelText">Novice Level</div>
+                </div>
+                <div class="text-right">
+                    <div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div id="levelFill" class="bg-indigo-600 h-full w-0 transition-all duration-500"></div></div>
+                    <div class="text-[9px] font-black text-indigo-600 mt-1"><span id="totalClaimed">0</span> BADGES</div>
+                </div>
+            </div>
+
+            <div><span class="stat-label block mb-3">🔥 Special Streaks</span><div id="listSpecial" class="achievement-scroll"></div></div>
+            <div><span class="stat-label block mb-3">📦 Trade Milestones</span><div id="listTrades" class="achievement-scroll"></div></div>
+            <div><span class="stat-label block mb-3">💰 Profit Milestones</span><div id="listProfit" class="achievement-scroll"></div></div>
+        </div>
+
+        <div class="glass-card p-6">
+            <span class="stat-label mb-6 block">Trading Bias Sentiment</span>
+            <div class="gauge-track"><div id="needle" class="gauge-needle" style="left: 50%;"></div></div>
+            <div class="flex justify-between mt-2 font-black text-[10px] text-slate-400 uppercase">
+                <span>Bearish (Sells)</span><span>Neutral</span><span>Bullish (Buys)</span>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 space-y-4 border-2 border-slate-200 bg-white">
+            <div class="flex justify-between items-center">
+                <h3 class="text-[13px] font-black uppercase tracking-wider text-slate-800">Trading Journal</h3>
+                <div class="flex gap-2">
+                    <button onclick="saveNotes()" class="px-3 py-1 bg-indigo-600 text-white rounded-lg font-black text-[9px] uppercase">Save</button>
+                    <button onclick="clearNotes()" class="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg font-black text-[9px] uppercase">Clear</button>
+                </div>
+            </div>
+            <textarea id="traderNotes" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none text-[12px] font-medium text-slate-600 resize-none overflow-hidden" placeholder="Record your market psychology..." oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+        </div>
+
+        <div class="glass-card p-6 space-y-6">
+            <span class="stat-label">Trader Identity</span>
+            <div class="space-y-4">
+                <input type="text" id="nameInput" class="input-field" placeholder="Trading Name">
+                <div class="flex gap-2">
+                    <div class="style-chip" data-val="Scalper">Scalper</div>
+                    <div class="style-chip" data-val="Day Trader">Day Trader</div>
+                    <div class="style-chip" data-val="Swing Trader">Swing Trader</div>
+                </div>
+                <textarea id="bioInput" class="input-field h-24 resize-none" placeholder="Your Trading Philosophy..."></textarea>
+            </div>
+            <button onclick="confirmSaveProfile()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl">Sync Terminal Changes</button>
+        </div>
+
+        <div class="px-2">
+            <button onclick="logoutNow()" class="w-full py-4 bg-rose-50 text-rose-600 rounded-2xl font-black uppercase text-[11px] tracking-widest border border-rose-100 hover:bg-rose-100 transition-all">
+                Terminate Session
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+            authDomain: "traders-iq-app-f5169.firebaseapp.com",
+            projectId: "traders-iq-app-f5169",
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+            messagingSenderId: "411253913617",
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0",
+            measurementId: "G-6LX6KBFVQF"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        let currentUID = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUID = user.uid;
+                localStorage.setItem('traders_iq_userid', currentUID);
+                // First initialize with local data for speed
+                window.init();
+                // Then fetch from cloud and update
+                await loadFromCloud();
+            } else {
+                currentUID = localStorage.getItem('traders_iq_userid') || "guest_" + Math.floor(Math.random() * 10000);
+                window.init();
+            }
+        });
+
+        window.logoutNow = async function() {
+            openModal("Signout Terminal", "Confirm to terminate current session and logout?", async () => {
+                try {
+                    await signOut(auth);
+                    localStorage.clear();
+                    window.location.href = "index.html"; 
+                } catch (e) { console.error("Logout Error:", e); }
+            });
+        };
+
+        window.calculateGlobalRank = async function() {
+            if(!currentUID) return;
+            try {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, orderBy("xp", "desc"));
+                const querySnapshot = await getDocs(q);
+                let rank = 1;
+                let found = false;
+                querySnapshot.forEach((doc) => {
+                    if (doc.id === currentUID) {
+                        document.getElementById('globalRank').innerText = "#" + rank;
+                        found = true;
+                    }
+                    if(!found) rank++;
+                });
+            } catch (e) { console.error("Rank Error:", e); }
+        };
+
+        window.syncToCloud = async function() {
+            if(!currentUID) return;
+            const profile = JSON.parse(localStorage.getItem('traders_iq_profile')) || {};
+            const claimed = JSON.parse(localStorage.getItem('traders_iq_claimed')) || [];
+            const xp = parseInt(localStorage.getItem('traders_iq_xp')) || 0;
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            try {
+                await setDoc(doc(db, "users", currentUID), { 
+                    profile, 
+                    claimed, 
+                    xp: xp, 
+                    userTimezone: userTimezone,
+                    lastSync: new Date().toISOString()
+                }, { merge: true });
+                window.calculateGlobalRank();
+            } catch (e) { console.error("Cloud Sync Failed", e); }
+        };
+
+        async function loadFromCloud() {
+            if(!currentUID) return;
+            try {
+                const docSnap = await getDoc(doc(db, "users", currentUID));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.profile) {
+                        // Priority: Merge cloud profile with current notes to ensure journal isn't overwritten if not synced
+                        localStorage.setItem('traders_iq_profile', JSON.stringify(data.profile));
+                    }
+                    if(data.claimed) localStorage.setItem('traders_iq_claimed', JSON.stringify(data.claimed));
+                    if(data.xp !== undefined) localStorage.setItem('traders_iq_xp', JSON.stringify(data.xp));
+                    
+                    window.init(); // Refresh UI with cloud data
+                }
+                window.calculateGlobalRank();
+            } catch (e) { console.error("Cloud Load Failed", e); }
+        }
+    </script>
+
+    <script>
+        let selectedStyle = 'Scalper';
+        let base64Image = "";
+        let claimedBadges = [];
+        let totalXP = 0;
+
+        function openModal(title, text, onConfirm) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerText = text;
+            document.getElementById('customModal').style.display = 'flex';
+            document.getElementById('modalConfirm').onclick = () => { onConfirm(); closeModal(); };
+        }
+        function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+        function closeBanner() { document.getElementById('rewardBanner').classList.remove('show'); }
+
+        document.querySelectorAll('.style-chip').forEach(chip => {
+            chip.onclick = function() {
+                document.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                selectedStyle = this.dataset.val;
+            }
+        });
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function confirmSaveProfile() {
+            openModal("Sync Credentials", "Do you want to sync your profile updates to the cloud terminal?", saveProfile);
+        }
+
+        function saveProfile() {
+            const profile = JSON.parse(localStorage.getItem('traders_iq_profile')) || {};
+            profile.name = document.getElementById('nameInput').value || 'Junior Trader';
+            profile.bio = document.getElementById('bioInput').value || '';
+            profile.style = selectedStyle;
+            profile.target = parseInt(document.getElementById('pnlTarget').value) || 5000;
+            profile.avatar = base64Image || profile.avatar;
+            // Notes handling to ensure journal logic is maintained
+            profile.notes = document.getElementById('traderNotes').value;
+            
+            localStorage.setItem('traders_iq_profile', JSON.stringify(profile));
+            showToast("Profile Updated!");
+            if(window.syncToCloud) window.syncToCloud();
+            setTimeout(() => init(), 500);
+        }
+
+        function saveNotes() {
+            openModal("Archive Journal", "Save your current psychological entries to the terminal journal?", () => {
+                const profile = JSON.parse(localStorage.getItem('traders_iq_profile')) || {};
+                profile.notes = document.getElementById('traderNotes').value;
+                localStorage.setItem('traders_iq_profile', JSON.stringify(profile));
+                showToast("Journal Archived!");
+                if(window.syncToCloud) window.syncToCloud();
+                init();
+            });
+        }
+
+        function clearNotes() {
+            openModal("Purge History", "Are you sure you want to permanently clear all journal entries?", () => {
+                document.getElementById('traderNotes').value = "";
+                const profile = JSON.parse(localStorage.getItem('traders_iq_profile')) || {};
+                profile.notes = "";
+                localStorage.setItem('traders_iq_profile', JSON.stringify(profile));
+                showToast("Journal Purged!");
+                if(window.syncToCloud) window.syncToCloud();
+                init();
+            });
+        }
+
+        function claimReward(id, label, icon, xp = 500) {
+            if(!claimedBadges.includes(id)) {
+                claimedBadges.push(id);
+                totalXP += xp;
+                localStorage.setItem('traders_iq_claimed', JSON.stringify(claimedBadges));
+                localStorage.setItem('traders_iq_xp', JSON.stringify(totalXP));
+                document.getElementById('bannerIcon').innerText = icon;
+                document.getElementById('bannerTitle').innerText = label;
+                document.getElementById('bannerXP').innerText = `+${xp} XP`;
+                document.getElementById('rewardBanner').classList.add('show');
+                if(window.syncToCloud) window.syncToCloud();
+                init();
+            }
+        }
+
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    base64Image = e.target.result;
+                    document.getElementById('mainAvatarPreview').innerHTML = `<img src="${base64Image}" class="w-full h-full object-cover">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function loadAchievements(trades, pnl, winRate, streak) {
+            const specialList = document.getElementById('listSpecial');
+            specialList.innerHTML = '';
+            const specials = [
+                { id: 'S-W3', icon: '⚡', label: '3 Win Streak', val: streak >= 3, xp: 1000 },
+                { id: 'S-W5', icon: '🔥', label: '5 Win Streak', val: streak >= 5, xp: 2500 },
+                { id: 'S-ACC', icon: '🎯', label: '80% Accuracy', val: winRate >= 80 && trades >= 10, xp: 3000 }
+            ];
+            specials.forEach(s => {
+                const isClaimed = claimedBadges.includes(s.id);
+                const badge = document.createElement('div');
+                badge.className = `badge-item ${s.val ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''} border-dashed border-indigo-300`;
+                badge.onclick = s.val && !isClaimed ? () => claimReward(s.id, s.label, s.icon, s.xp) : null;
+                badge.innerHTML = `<div class="claim-dot"></div><div class="text-2xl mb-1">${s.icon}</div><div class="font-black text-[9px] uppercase text-slate-700">${s.label}</div>`;
+                specialList.appendChild(badge);
+            });
+
+            const config = [
+                { id: 'T', icon: '📦', label: 'Trades', count: 40, step: 10, val: trades, el: 'listTrades' },
+                { id: 'P', icon: '💰', label: 'Profit', count: 40, step: 200, val: pnl, el: 'listProfit' }
+            ];
+            config.forEach(cat => {
+                const container = document.getElementById(cat.el);
+                container.innerHTML = '';
+                for(let i=1; i<=cat.count; i++) {
+                    const target = i * cat.step;
+                    const badgeId = `${cat.id}-${target}`;
+                    const isUnlocked = cat.val >= target;
+                    const isClaimed = claimedBadges.includes(badgeId);
+                    const badge = document.createElement('div');
+                    badge.className = `badge-item ${isUnlocked ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''}`;
+                    badge.onclick = isUnlocked && !isClaimed ? () => claimReward(badgeId, `${target} ${cat.label}`, cat.icon) : null;
+                    badge.innerHTML = `<div class="claim-dot"></div><div class="text-2xl mb-1">${cat.icon}</div><div class="font-black text-[9px] uppercase text-slate-700">${target} ${cat.label}</div>`;
+                    container.appendChild(badge);
+                }
+            });
+            document.getElementById('totalClaimed').innerText = claimedBadges.length;
+        }
+
+        window.init = function() {
+            // Priority: Load from profile first, then fallbacks
+            const profile = JSON.parse(localStorage.getItem('traders_iq_profile')) || { name: 'Junior Trader', target: 5000, style: 'Scalper', bio: '', notes: '' };
+            // Fetch trades from both potential keys for compatibility
+            const allData = JSON.parse(localStorage.getItem('traders_iq_data')) || JSON.parse(localStorage.getItem('trades')) || [];
+            claimedBadges = JSON.parse(localStorage.getItem('traders_iq_claimed')) || [];
+            totalXP = parseInt(localStorage.getItem('traders_iq_xp')) || 0;
+
+            document.getElementById('nameInput').value = profile.name;
+            document.getElementById('dispName').innerText = profile.name;
+            document.getElementById('xpText').innerText = totalXP.toLocaleString() + ' XP';
+            document.getElementById('pnlTarget').value = profile.target;
+            document.getElementById('targetGoalVal').innerText = '$' + profile.target;
+            document.getElementById('bioInput').value = profile.bio || '';
+            document.getElementById('dispBio').innerText = profile.bio ? `"${profile.bio}"` : '"Add your philosophy below..."';
+            
+            // Journal logic: ensure text stays synced between UI and storage
+            const journalText = profile.notes || "";
+            document.getElementById('traderNotes').value = journalText;
+            document.getElementById('traderNotes').style.height = 'auto';
+            document.getElementById('traderNotes').style.height = document.getElementById('traderNotes').scrollHeight + 'px';
+            
+            document.getElementById('dispStyle').innerText = profile.style || 'Scalper';
+
+            selectedStyle = profile.style || 'Scalper';
+            document.querySelectorAll('.style-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.val === selectedStyle);
+            });
+
+            let pnl = 0, wins = 0, buys = 0, sells = 0, streak = 0;
+            
+            // Streak Logic (Last consecutive wins)
+            for(let i = allData.length - 1; i >= 0; i--) {
+                if(parseFloat(allData[i].pnl) > 0) streak++; else break;
+            }
+
+            allData.forEach(t => {
+                const val = parseFloat(t.pnl || 0);
+                pnl += val;
+                if(val > 0) wins++;
+                if(t.type === 'Buy') buys++; 
+                else if(t.type === 'Sell') sells++;
+            });
+
+            const winRate = allData.length ? Math.round((wins/allData.length)*100) : 0;
+            document.getElementById('statTrades').innerText = allData.length;
+            document.getElementById('statWinRate').innerText = winRate + '%';
+            document.getElementById('statPnL').innerText = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toFixed(0);
+            document.getElementById('currentGoalVal').innerText = '$' + pnl.toFixed(0);
+
+            const prog = Math.min(100, Math.max(0, (pnl/profile.target)*100));
+            document.getElementById('goalProgress').style.width = (pnl > 0 ? prog : 0) + '%';
+            
+            // XP Level calculation (Assuming 5000 XP per level for the fill bar)
+            document.getElementById('levelFill').style.width = Math.min(100, (totalXP % 5000) / 50) + "%";
+            
+            // Sentiment Gauge logic
+            let sentimentPerc = 50; 
+            const totalValidTrades = buys + sells;
+            if(totalValidTrades > 0) { sentimentPerc = (buys / totalValidTrades) * 100; }
+            document.getElementById('needle').style.left = sentimentPerc + '%';
+
+            if(profile.avatar) {
+                base64Image = profile.avatar;
+                document.getElementById('mainAvatarPreview').innerHTML = `<img src="${base64Image}" class="w-full h-full object-cover">`;
+            }
+            loadAchievements(allData.length, pnl, winRate, streak);
+        }
+    </script>
+</body>
+</html>
