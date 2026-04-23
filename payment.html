@@ -163,10 +163,20 @@
             if(!code) return showAppToast("Please enter a valid promo code.", "#f43f5e");
             
             try {
+                // Fetching from 'promos' collection with CAPITAL code as ID
                 const promoSnap = await getDoc(doc(db, "promos", code));
-                if (promoSnap.exists() && promoSnap.data().status === "active") {
-                    activeDiscountCode = code;
-                    showAppToast(`Promo "${code}" applied! Select your plan.`, "#10b981");
+                
+                if (promoSnap.exists()) {
+                    // Logic to check 'status' field
+                    const statusVal = promoSnap.data().status.toString().trim();
+                    
+                    if (statusVal === "active") {
+                        activeDiscountCode = code;
+                        showAppToast(`Promo "${code}" applied! Select your plan.`, "#10b981");
+                    } else {
+                        activeDiscountCode = null;
+                        showAppToast("Invalid or expired code.", "#f43f5e");
+                    }
                 } else {
                     activeDiscountCode = null;
                     showAppToast("Invalid or expired code.", "#f43f5e");
