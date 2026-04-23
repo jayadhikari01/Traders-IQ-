@@ -112,7 +112,7 @@
 
         <div class="max-w-md mx-auto">
             <div class="bento-card p-8 border-dashed border-2 border-slate-200 bg-white flex flex-col items-center">
-                <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold uppercase tracking-widest mb-4">
+                <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold tracking-widest mb-4">
                 <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all">
                     Apply Promo Code
                 </button>
@@ -159,8 +159,12 @@
         }
 
         window.applyPromo = async () => {
-            const code = document.getElementById('promoCode').value.trim().toUpperCase();
-            if(!code) return showAppToast("Please enter a valid promo code.", "#f43f5e");
+            // Hum .toUpperCase() backend fetch ke liye use karenge taki capital Document ID match ho
+            // Par UI mein box ke andar ye automatically nahi badlega
+            const rawInput = document.getElementById('promoCode').value.trim();
+            const code = rawInput.toUpperCase();
+            
+            if(!rawInput) return showAppToast("Please enter a valid promo code.", "#f43f5e");
             
             try {
                 // 'promos' collection (small) aur Document ID (CAPITAL) fetch hoga
@@ -169,7 +173,7 @@
                 // Firestore fields 'status' aur value 'active' check karega (dono small)
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
                     activeDiscountCode = code;
-                    showAppToast(`Promo "${code}" applied! Select your plan.`, "#10b981");
+                    showAppToast(`Promo "${rawInput}" applied! Select your plan.`, "#10b981");
                 } else {
                     activeDiscountCode = null;
                     showAppToast("Invalid or expired code.", "#f43f5e");
