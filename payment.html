@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traders IQ | Elite Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { background: #fdfdff; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; overflow-x: hidden; }
@@ -66,7 +66,7 @@
                     </li>
                 </ul>
 
-                <button onclick="openLemon('53877572-010b-48a8-954b-01a7d7b99ad9')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                <button onclick="startRazorpayPayment(9.99, 'Monthly Pro')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">
                     Activate Monthly Access
                 </button>
             </div>
@@ -103,7 +103,7 @@
                     </li>
                 </ul>
 
-                <button onclick="openLemon('3de0a05c-91bb-4c76-9238-ab6500974c68')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                <button onclick="startRazorpayPayment(89.99, 'Annual Elite')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">
                     Activate Annual Elite
                 </button>
             </div>
@@ -140,13 +140,16 @@
         const auth = getAuth(app);
 
         let currentUserId = null;
+        let currentUserEmail = null;
         let activeDiscountCode = null;
 
         onAuthStateChanged(auth, (user) => { 
             if (user) {
-                currentUserId = user.uid; 
+                currentUserId = user.uid;
+                currentUserEmail = user.email;
             } else {
                 currentUserId = null;
+                currentUserEmail = null;
             }
         });
 
@@ -159,13 +162,10 @@
         }
 
         window.applyPromo = async () => {
-            // Box se raw input utha rahe hain
             const rawInput = document.getElementById('promoCode').value.trim();
-            
             if(!rawInput) return showAppToast("Please enter a valid promo code.", "#f43f5e");
             
             try {
-                // Database fetch ke liye capital code use kar rahe hain
                 const searchCode = rawInput.toUpperCase();
                 const promoSnap = await getDoc(doc(db, "promos", searchCode));
                 
@@ -178,22 +178,59 @@
                 }
             } catch (e) { 
                 console.error(e); 
-                // Agar checking mein error aa raha hai toh ye line chalti hai
                 showAppToast("Error checking code.", "#f43f5e");
             }
         };
 
-        window.openLemon = (id) => {
+        window.startRazorpayPayment = async (amountUsd, planName) => {
             if (!currentUserId) return showAppToast("Please log in to continue.", "#f43f5e");
-            
-            let url = `https://tradersiq.lemonsqueezy.com/checkout/buy/${id}?checkout[custom][user_id]=${currentUserId}`;
-            
-            if (activeDiscountCode) {
-                url += `&checkout[discount_code]=${activeDiscountCode}`;
-            }
 
-            LemonSqueezy.Url.Open(url);
+            try {
+                // Backend call to create order (amount conversion yahan hogi)
+                const response = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        amount: amountUsd, 
+                        planName: planName,
+                        promoCode: activeDiscountCode 
+                    }),
+                });
+
+                const orderData = await response.json();
+
+                const options = {
+                    // Key ID ko Vercel environment variable se liya gaya hai
+                    "key": orderData.razorpayKeyId, 
+                    "amount": orderData.amount, // INR Paise mein backend se aayega
+                    "currency": "INR",
+                    "name": "Traders IQ",
+                    "description": `Upgrade to ${planName}`,
+                    "order_id": orderData.id,
+                    "handler": function (response) {
+                        showAppToast("Payment Successful! Welcome to Elite.", "#10b981");
+                    },
+                    "prefill": {
+                        "email": currentUserEmail || ""
+                    },
+                    "notes": {
+                        "user_id": currentUserId,
+                        "plan_name": planName
+                    },
+                    "theme": {
+                        "color": "#6366f1"
+                    }
+                };
+
+                const rzp1 = new window.Razorpay(options);
+                rzp1.open();
+
+            } catch (error) {
+                console.error(error);
+                showAppToast("Failed to initiate payment.", "#f43f5e");
+            }
         };
     </script>
 </body>
-</html>
+                </html>
+                                
