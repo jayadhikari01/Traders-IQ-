@@ -207,7 +207,8 @@
                     "description": `Upgrade to ${planName}`,
                     "order_id": orderData.id,
                     "handler": function (response) {
-                        showAppToast("Payment Successful! Welcome to Elite.", "#10b981");
+                        // Success hone par redirection logic yahan add kiya hai
+                        window.location.href = `success.html?payment_id=${response.razorpay_payment_id}`;
                     },
                     "prefill": {
                         "email": currentUserEmail || ""
@@ -231,4 +232,5 @@
         };
     </script>
 </body>
-</html>
+                            </html>
+    
