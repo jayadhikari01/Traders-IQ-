@@ -40,6 +40,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
+            
             <div class="bento-card p-10 flex flex-col border-indigo-100 shadow-xl shadow-indigo-50">
                 <h3 class="text-xl font-black mb-1 premium-text">Monthly Pro</h3>
                 <div class="text-4xl font-black mb-8 text-slate-900">$9.99 <span class="text-sm text-slate-400 font-bold">/mo</span></div>
@@ -106,6 +107,7 @@
                     Activate Annual Elite
                 </button>
             </div>
+
         </div>
 
         <div class="max-w-md mx-auto">
@@ -116,6 +118,7 @@
                 </button>
             </div>
         </div>
+
     </div>
 
     <script type="module">
@@ -155,12 +158,12 @@
             document.getElementById('toast-msg').innerText = message;
             document.getElementById('toast-indicator').style.backgroundColor = color;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
         window.applyPromo = async () => {
             const rawInput = document.getElementById('promoCode').value.trim();
-            if(!rawInput) return showAppToast("Please enter a valid promo code.", "#f43f5e");
+            if(!rawInput) return showAppToast("Please enter a code.", "#f43f5e");
             
             try {
                 const searchCode = rawInput.toUpperCase();
@@ -168,39 +171,40 @@
                 
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
                     activeDiscountCode = searchCode;
-                    showAppToast(`Promo "${rawInput}" applied! Select your plan.`, "#10b981");
+                    showAppToast(`Code "${rawInput}" applied!`, "#10b981");
                 } else {
                     activeDiscountCode = null;
-                    showAppToast("Invalid or expired code.", "#f43f5e");
+                    showAppToast("Invalid code.", "#f43f5e");
                 }
             } catch (e) { 
-                console.error(e); 
                 showAppToast("Error checking code.", "#f43f5e");
             }
         };
 
         window.startRazorpayPayment = async (amountUsd, planName) => {
-            if (!currentUserId) return showAppToast("Please log in to continue.", "#f43f5e");
+            if (!currentUserId) return showAppToast("Please login first.", "#f43f5e");
 
             try {
-                // Backend call (Isme user_id add kiya gaya hai webhook ke liye)
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         amount: amountUsd, 
                         planName: planName,
-                        user_id: currentUserId, // Zaroori change
-                        promoCode: activeDiscountCode
+                        user_id: currentUserId,
+                        promoCode: activeDiscountCode 
                     }),
                 });
 
-                if (!response.ok) {
-                    const errorMsg = await response.json();
-                    throw new Error(errorMsg.error || "Failed to initiate payment.");
+                const responseText = await response.text();
+                let orderData;
+                try {
+                    orderData = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error("Server Error: Check Vercel Logs for JSON issue.");
                 }
 
-                const orderData = await response.json();
+                if (!response.ok) throw new Error(orderData.error || "Order failed.");
 
                 const options = {
                     "key": orderData.razorpayKeyId,
@@ -210,27 +214,19 @@
                     "description": `Upgrade to ${planName}`,
                     "order_id": orderData.id,
                     "handler": function (response) {
-                        // Success redirection logic
                         window.location.href = `success.html?payment_id=${response.razorpay_payment_id}`;
                     },
-                    "prefill": {
-                        "email": currentUserEmail || ""
-                    },
-                    "notes": {
-                        "user_id": currentUserId,
-                        "plan_name": planName
-                    },
-                    "theme": {
-                        "color": "#6366f1"
-                    }
+                    "prefill": { "email": currentUserEmail || "" },
+                    "notes": { "user_id": currentUserId, "plan_name": planName },
+                    "theme": { "color": "#6366f1" }
                 };
 
-                const rzp1 = new window.Razorpay(options);
-                rzp1.open();
+                const rzp = new window.Razorpay(options);
+                rzp.open();
 
             } catch (error) {
                 console.error(error);
-                showAppToast(error.message || "Failed to initiate payment.", "#f43f5e");
+                showAppToast(error.message, "#f43f5e");
             }
         };
     </script>
