@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import crypto from 'crypto';
 
+// 1. Firebase Admin Initialization (Vercel Environment Variables)
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -14,72 +15,86 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
+    // Razorpay Webhooks humesha POST request bhejte hain
     if (req.method !== 'POST') {
-        return res.status(405).send('Use POST for Razorpay Webhooks.');
+        return res.status(405).send('Method Not Allowed');
     }
 
     try {
+        // 2. Raw Body reading (Signature verify karne ke liye zaroori hai)
         const chunks = [];
         for await (const chunk of req) {
             chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
         }
         const rawBody = Buffer.concat(chunks);
 
-        // Razorpay Verification
+        // 3. Security: Razorpay Signature Verification
+        // Vercel mein 'RAZORPAY_WEBHOOK_SECRET' naam se variable hona chahiye
         const secret = process.env.RAZORPAY_WEBHOOK_SECRET; 
         const signature = req.headers['x-razorpay-signature'];
+        
         const hmac = crypto.createHmac('sha256', secret);
         const digest = hmac.update(rawBody).digest('hex');
 
         if (!signature || signature !== digest) {
-            console.error('Security Check Failed');
+            console.error('Security Check Failed: Invalid Razorpay Signature');
             return res.status(401).send('Invalid Signature');
         }
 
+        // 4. Parse Razorpay Payload
         const payload = JSON.parse(rawBody.toString());
-        const event = payload.event;
+        const eventName = payload.event;
         
-        // Razorpay mein userId 'notes' se aayega (Jo aap checkout ke waqt bhejenge)
-        const userId = payload.payload.payment.entity.notes.user_id;
+        // Razorpay mein userId 'notes' ke andar milega
+        const paymentEntity = payload.payload.payment.entity;
+        const userId = paymentEntity.notes ? paymentEntity.notes.user_id : null;
 
-        console.log(`Processing ${event} for User: ${userId}`);
+        console.log(`Event Received: ${eventName} for User: ${userId}`);
 
-        // Update Firestore for Success
-        if (event === 'payment.captured' || event === 'order.paid') {
+        // 5. Update Firestore Logic (Pro Status Upgrade)
+        if (eventName === 'payment.captured' || eventName === 'order.paid') {
             if (userId) {
                 await db.collection('users').doc(userId).set({
                     isPro: true,
-                    plan: payload.payload.payment.entity.notes.plan_name || 'Premium',
-                    paymentId: payload.payload.payment.entity.id,
+                    status: "active",
+                    plan: paymentEntity.notes.plan_name || 'Premium',
+                    paymentId: paymentEntity.id,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                return res.status(200).send('User Upgraded to PRO');
+                console.log(`Success: User ${userId} upgraded to PRO via Razorpay`);
+                return res.status(200).send('User Pro Status Updated');
             } else {
-                return res.status(400).send('No User ID in notes');
+                console.error('Error: No user_id found in Razorpay notes');
+                return res.status(400).send('No User ID provided');
             }
         }
 
-        // Handle Payment Failure/Refund (Optional)
-        if (event === 'payment.failed' || event === 'refund.processed') {
+        // 6. Handle Payment Failure or Expired Status
+        if (eventName === 'payment.failed' || eventName === 'subscription.halted') {
             if (userId) {
                 await db.collection('users').doc(userId).update({
                     isPro: false,
+                    status: "inactive",
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                return res.status(200).send('Pro Status Removed');
+                return res.status(200).send('User Pro Status Removed');
             }
         }
 
-        return res.status(200).send('Webhook Processed');
+        // Baki events ke liye standard response
+        return res.status(200).send('Webhook Received');
 
     } catch (error) {
-        console.error('Webhook Error:', error.message);
-        return res.status(500).send('Error');
+        console.error('Critical Webhook Error:', error.message);
+        return res.status(500).send('Internal Server Error');
     }
 }
 
+// Body parser ko false rakhna zaroori hai raw body read karne ke liye
 export const config = {
-    api: { bodyParser: false },
+    api: {
+        bodyParser: false,
+    },
 };
-            
+                
