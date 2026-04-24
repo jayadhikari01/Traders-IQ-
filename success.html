@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Success | Traders IQ</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap');
         body { background: #fdfdff; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
@@ -56,27 +57,18 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Checkout validation logic
-                const isFromCheckout = true; 
-
-                if (isFromCheckout) {
-                    try {
-                        // Ab sara data sirf Cloud Firestore mein save ho raha hai
-                        await setDoc(doc(db, "users", user.uid), { 
-                            isPro: true, 
-                            status: "active",
-                            activationDate: new Date().toISOString()
-                        }, { merge: true });
-                        
-                        // Local storage wala part remove kar diya hai
-                        startFlow();
-                    } catch (error) {
-                        console.error("Firebase Error:", error);
-                        startFlow();
-                    }
-                } else {
-                    alert("Unauthorized access. Please complete payment.");
-                    window.location.href = 'payment.html';
+                // Razorpay confirmation ke baad isPro update
+                try {
+                    await setDoc(doc(db, "users", user.uid), { 
+                        isPro: true, 
+                        status: "active",
+                        activationDate: new Date().toISOString()
+                    }, { merge: true });
+                    
+                    startFlow();
+                } catch (error) {
+                    console.error("Firebase Error:", error);
+                    startFlow();
                 }
             } else {
                 window.location.href = 'login.html';
