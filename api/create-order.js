@@ -1,13 +1,24 @@
 import Razorpay from 'razorpay';
+import admin from 'firebase-admin';
+
+// Firebase Admin initialization logic
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            // Private key ki newline characters ko handle karne ke liye replace zaroori hai
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+    });
+}
+
+const db = admin.firestore();
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    // API Keys check
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-        return res.status(500).json({ error: "Razorpay keys are missing in Vercel settings" });
-    }
-
+    // Razorpay instance with Vercel variables
     const razorpay = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -15,16 +26,27 @@ export default async function handler(req, res) {
 
     try {
         const { amount, planName, user_id, promoCode } = req.body;
-
-        if (!user_id) return res.status(400).json({ error: "User ID is missing" });
-
-        // Conversion at 94
-        const conversionRate = 94; 
         
-        // CLEAN AMOUNT LOGIC: Decimal hata kar pure number banane ke liye
-        // Isse ₹939.06 ki jagah exact ₹939.00 ya ₹940.00 dikhega
-        const finalRupees = Math.round(amount * conversionRate); 
-        const amountInPaise = finalRupees * 100;
+        if (!user_id) return res.status(400).json({ error: "User ID is required" });
+
+        const conversionRate = 94;
+        let finalAmountInInr = amount * conversionRate;
+
+        // --- DYNAMIC PROMO CHECK FROM FIRESTORE ---
+        if (promoCode) {
+            // Hum direct Firestore ke 'promos' collection mein check kar rahe hain
+            const promoRef = db.collection('promos').doc(promoCode.toUpperCase());
+            const promoDoc = await promoRef.get();
+
+            if (promoDoc.exists && promoDoc.data().status === 'active') {
+                const discountPercent = promoDoc.data().discount || 0;
+                // Discount calculate karke price kam karna
+                finalAmountInInr = finalAmountInInr * (1 - (discountPercent / 100));
+            }
+        }
+
+        // Razorpay expects amount in Paise (Integer)
+        const amountInPaise = Math.round(finalAmountInInr) * 100;
 
         const options = {
             amount: amountInPaise,
@@ -33,7 +55,7 @@ export default async function handler(req, res) {
             notes: {
                 user_id: user_id,
                 plan_name: planName,
-                promo: promoCode || "none"
+                promo_used: promoCode || "NONE"
             }
         };
 
@@ -42,10 +64,11 @@ export default async function handler(req, res) {
         res.status(200).json({
             id: order.id,
             amount: order.amount,
-            razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+            razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID // Frontend ke liye public key
         });
+
     } catch (error) {
-        console.error("Order Error:", error);
-        res.status(500).json({ error: error.message || "Failed to create order" });
+        console.error("Order Creation Error:", error);
+        res.status(500).json({ error: error.message });
     }
 }
