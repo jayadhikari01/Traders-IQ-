@@ -40,7 +40,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
-            
             <div class="bento-card p-10 flex flex-col border-indigo-100 shadow-xl shadow-indigo-50">
                 <h3 class="text-xl font-black mb-1 premium-text">Monthly Pro</h3>
                 <div class="text-4xl font-black mb-8 text-slate-900">$9.99 <span class="text-sm text-slate-400 font-bold">/mo</span></div>
@@ -107,7 +106,6 @@
                     Activate Annual Elite
                 </button>
             </div>
-
         </div>
 
         <div class="max-w-md mx-auto">
@@ -118,7 +116,6 @@
                 </button>
             </div>
         </div>
-
     </div>
 
     <script type="module">
@@ -186,13 +183,14 @@
             if (!currentUserId) return showAppToast("Please log in to continue.", "#f43f5e");
 
             try {
-                // Backend call to create order (amount conversion yahan hogi)
+                // Backend call to create order
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         amount: amountUsd, 
                         planName: planName,
+                        user_id: currentUserId, // Webhook ke liye zaroori hai
                         promoCode: activeDiscountCode 
                     }),
                 });
@@ -200,15 +198,15 @@
                 const orderData = await response.json();
 
                 const options = {
-                    // Key ID ko Vercel environment variable se liya gaya hai
                     "key": orderData.razorpayKeyId, 
-                    "amount": orderData.amount, // INR Paise mein backend se aayega
+                    "amount": orderData.amount, 
                     "currency": "INR",
                     "name": "Traders IQ",
                     "description": `Upgrade to ${planName}`,
                     "order_id": orderData.id,
                     "handler": function (response) {
-                        showAppToast("Payment Successful! Welcome to Elite.", "#10b981");
+                        // Success redirection to success.html
+                        window.location.href = `success.html?payment_id=${response.razorpay_payment_id}`;
                     },
                     "prefill": {
                         "email": currentUserEmail || ""
@@ -232,5 +230,4 @@
         };
     </script>
 </body>
-                </html>
-                                
+</html>
