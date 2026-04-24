@@ -6,26 +6,25 @@ const razorpay = new Razorpay({
 });
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed');
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
         const { amount, planName, user_id, promoCode } = req.body;
 
-        // USD to INR Conversion (Updated to 94)
-        // Razorpay amount 'Paise' mein leta hai (* 100)
+        if (!user_id) throw new Error("User ID is required");
+
+        // USD ($) to INR (₹) conversion at 94
         const conversionRate = 94; 
         const amountInPaise = Math.round(amount * conversionRate * 100);
 
         const options = {
             amount: amountInPaise,
             currency: "INR",
-            receipt: `tradersiq_rcpt_${Date.now()}`,
+            receipt: `rcpt_${Date.now()}`,
             notes: {
                 user_id: user_id,
                 plan_name: planName,
-                promo_applied: promoCode || "none"
+                promo: promoCode || "none"
             }
         };
 
@@ -34,15 +33,10 @@ export default async function handler(req, res) {
         res.status(200).json({
             id: order.id,
             amount: order.amount,
-            currency: order.currency,
             razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
         });
-
     } catch (error) {
-        console.error("Razorpay Order Creation Error:", error);
-        res.status(500).json({ 
-            error: "Failed to create order",
-            details: error.message 
-        });
+        console.error("Order Error:", error.message);
+        res.status(500).json({ error: error.message });
     }
 }
