@@ -183,29 +183,34 @@
             if (!currentUserId) return showAppToast("Please log in to continue.", "#f43f5e");
 
             try {
-                // Backend call to create order
+                // Backend call (Isme user_id add kiya gaya hai webhook ke liye)
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         amount: amountUsd, 
                         planName: planName,
-                        user_id: currentUserId, // Webhook ke liye zaroori hai
-                        promoCode: activeDiscountCode 
+                        user_id: currentUserId, // Zaroori change
+                        promoCode: activeDiscountCode
                     }),
                 });
+
+                if (!response.ok) {
+                    const errorMsg = await response.json();
+                    throw new Error(errorMsg.error || "Failed to initiate payment.");
+                }
 
                 const orderData = await response.json();
 
                 const options = {
-                    "key": orderData.razorpayKeyId, 
-                    "amount": orderData.amount, 
+                    "key": orderData.razorpayKeyId,
+                    "amount": orderData.amount,
                     "currency": "INR",
                     "name": "Traders IQ",
                     "description": `Upgrade to ${planName}`,
                     "order_id": orderData.id,
                     "handler": function (response) {
-                        // Success redirection to success.html
+                        // Success redirection logic
                         window.location.href = `success.html?payment_id=${response.razorpay_payment_id}`;
                     },
                     "prefill": {
@@ -225,9 +230,10 @@
 
             } catch (error) {
                 console.error(error);
-                showAppToast("Failed to initiate payment.", "#f43f5e");
+                showAppToast(error.message || "Failed to initiate payment.", "#f43f5e");
             }
         };
     </script>
 </body>
-</html>
+    </html>
+    
