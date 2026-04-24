@@ -12,7 +12,7 @@
         .mesh { position: fixed; inset: 0; z-index: -1; background: radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%); }
         .success-card { background: white; border-radius: 3rem; border: 1px solid #f0fdf4; box-shadow: 0 40px 100px -20px rgba(34, 197, 94, 0.2); }
         .progress-bar { height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #22c55e; width: 0%; transition: width 30s linear; }
+        .progress-fill { height: 100%; background: #22c55e; width: 0%; transition: width 10s linear; }
         .check-icon { background: #22c55e; color: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 30px; box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3); }
     </style>
 </head>
@@ -27,7 +27,7 @@
         <div class="space-y-4">
             <div class="flex justify-between items-center text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
                 <span>Redirecting in</span>
-                <span id="timer" class="text-emerald-500">30s</span>
+                <span id="timer" class="text-emerald-500">10s</span>
             </div>
             <div class="progress-bar">
                 <div id="fill" class="progress-fill"></div>
@@ -76,7 +76,7 @@
         });
 
         function startFlow() {
-            let time = 30;
+            let time = 10;
             const timerElement = document.getElementById('timer');
             const fillElement = document.getElementById('fill');
             
