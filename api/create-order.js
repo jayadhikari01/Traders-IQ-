@@ -3,7 +3,7 @@ import Razorpay from 'razorpay';
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    // 1. Check if keys exist in Environment Variables
+    // API Keys check
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
         return res.status(500).json({ error: "Razorpay keys are missing in Vercel settings" });
     }
@@ -20,7 +20,11 @@ export default async function handler(req, res) {
 
         // Conversion at 94
         const conversionRate = 94; 
-        const amountInPaise = Math.round(amount * conversionRate * 100);
+        
+        // CLEAN AMOUNT LOGIC: Decimal hata kar pure number banane ke liye
+        // Isse ₹939.06 ki jagah exact ₹939.00 ya ₹940.00 dikhega
+        const finalRupees = Math.round(amount * conversionRate); 
+        const amountInPaise = finalRupees * 100;
 
         const options = {
             amount: amountInPaise,
