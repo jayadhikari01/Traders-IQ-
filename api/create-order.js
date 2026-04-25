@@ -1,7 +1,6 @@
 import Razorpay from 'razorpay';
 import admin from 'firebase-admin';
 
-// Backend initialize logic
 if (!admin.apps.length) {
     try {
         admin.initializeApp({
@@ -19,42 +18,27 @@ if (!admin.apps.length) {
 const db = admin.apps.length ? admin.firestore() : null;
 
 export default async function handler(req, res) {
-    // Sirf POST request allow karein
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-    // Agar keys missing hain toh error do
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-        return res.status(500).json({ error: "Razorpay keys are missing in Vercel settings." });
-    }
 
     try {
         const { amount, planName, user_id, promoCode } = req.body;
-        
-        if (!user_id) return res.status(400).json({ error: "User ID is required" });
-
-        const conversionRate = 94; // Aapka fixed rate
+        const conversionRate = 94; 
         let finalAmountInInr = amount * conversionRate;
 
         // Promo Code Logic
         if (promoCode && db) {
-            try {
-                const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
-                if (promoDoc.exists && promoDoc.data().status === 'active') {
-                    const discount = promoDoc.data().discount || 0;
-                    finalAmountInInr = finalAmountInInr * (1 - (discount / 100));
-                }
-            } catch (pErr) {
-                console.warn("Promo check failed, using base price.");
+            const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
+            if (promoDoc.exists && promoDoc.data().status === 'active') {
+                const discount = promoDoc.data().discount || 0;
+                finalAmountInInr = finalAmountInInr * (1 - (discount / 100));
             }
         }
 
-        // --- 100% DISCOUNT (FREE ACCESS) LOGIC ---
+        // --- 100% OFF LOGIC (ISSE RAZORPAY SKIP HOGA) ---
         if (finalAmountInInr <= 0) {
             return res.status(200).json({
                 isFree: true,
-                message: "Full Discount Applied! Access Granted.",
-                planName: planName,
-                user_id: user_id
+                message: "Access Granted Free"
             });
         }
 
@@ -63,25 +47,16 @@ export default async function handler(req, res) {
             key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
 
-        const options = {
-            amount: Math.round(finalAmountInInr * 100), // Paise mein convert karein
+        const order = await razorpay.orders.create({
+            amount: Math.round(finalAmountInInr * 100),
             currency: "INR",
             receipt: `traderiq_${Date.now()}`,
             notes: { user_id, planName, promo: promoCode || "NONE" }
-        };
-
-        const order = await razorpay.orders.create(options);
-        
-        // Response bhejein
-        res.status(200).json({
-            id: order.id,
-            amount: order.amount,
-            razorpayKeyId: process.env.RAZORPAY_KEY_ID 
         });
 
+        res.status(200).json({ ...order, razorpayKeyId: process.env.RAZORPAY_KEY_ID });
+
     } catch (error) {
-        console.error("Order Creation Error:", error.message);
-        res.status(500).json({ error: "Internal Error: " + error.message });
+        res.status(500).json({ error: error.message });
     }
-    }
-            
+}
