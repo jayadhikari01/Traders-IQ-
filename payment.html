@@ -177,7 +177,7 @@
                     showAppToast("Invalid or expired code.", "#f43f5e");
                 }
             } catch (e) { 
-                console.error(e); 
+                console.error("Promo Logic Error:", e); 
                 showAppToast("Error checking code.", "#f43f5e");
             }
         };
@@ -199,6 +199,12 @@
 
                 const orderData = await response.json();
 
+                // Backend error detection
+                if (orderData.error) {
+                    console.error("Backend Error Details:", orderData.error);
+                    return showAppToast("Initialization failed. Check keys.", "#f43f5e");
+                }
+
                 const options = {
                     "key": orderData.razorpayKeyId, 
                     "amount": orderData.amount, 
@@ -207,7 +213,6 @@
                     "description": `Upgrade to ${planName}`,
                     "order_id": orderData.id,
                     "handler": function (response) {
-                        // Success hone par redirection logic yahan add kiya hai
                         window.location.href = `success.html?payment_id=${response.razorpay_payment_id}`;
                     },
                     "prefill": {
@@ -226,11 +231,11 @@
                 rzp1.open();
 
             } catch (error) {
-                console.error(error);
+                console.error("Critical Payment Error:", error);
                 showAppToast("Failed to initiate payment.", "#f43f5e");
             }
         };
     </script>
 </body>
-                            </html>
+                </html>
     
