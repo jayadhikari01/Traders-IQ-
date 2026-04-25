@@ -10,44 +10,44 @@ if (!admin.apps.length) {
                 privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
             }),
         });
-    } catch (e) {
-        console.error("Firebase Admin Error:", e.message);
-    }
+    } catch (e) { console.error("Firebase Error:", e.message); }
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        return res.status(500).json({ error: "Razorpay keys missing." });
+    }
 
     try {
         const { amount, planName, user_id, promoCode } = req.body;
         const conversionRate = 94; 
         let finalAmountInInr = amount * conversionRate;
 
-        // 1. Discount check pehle karein
+        // 1. Calculate Discount BEFORE creating Razorpay order
         if (promoCode && db) {
             const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
             if (promoDoc.exists && promoDoc.data().status === 'active') {
-                const discount = promoDoc.data().discount || 0;
-                // Yahan 50% ya 100% minus hoga
+                const discount = parseFloat(promoDoc.data().discount) || 0;
                 finalAmountInInr = finalAmountInInr * (1 - (discount / 100));
             }
         }
 
-        // 2. Agar amount 0 hai toh free access de dein
+        // 2. Handle 100% OFF (Amount <= 0)
         if (finalAmountInInr <= 0) {
             return res.status(200).json({ isFree: true });
         }
 
-        // 3. Razorpay order sirf discounted amount ke saath hi banayein
+        // 3. Create Razorpay order with Final Discounted Amount
         const razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
             key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
 
         const order = await razorpay.orders.create({
-            amount: Math.round(finalAmountInInr * 100), // Paise mein convert
+            amount: Math.round(finalAmountInInr * 100),
             currency: "INR",
             receipt: `traderiq_${Date.now()}`,
             notes: { user_id, planName, promo: promoCode || "NONE" }
@@ -58,7 +58,6 @@ export default async function handler(req, res) {
             amount: order.amount,
             razorpayKeyId: process.env.RAZORPAY_KEY_ID
         });
-
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
