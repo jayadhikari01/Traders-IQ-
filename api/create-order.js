@@ -2,29 +2,27 @@ import Razorpay from 'razorpay';
 import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            }),
-        });
-    } catch (e) { console.error("Firebase Error:", e.message); }
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+    });
 }
 
-const db = admin.apps.length ? admin.firestore() : null;
+const db = admin.firestore();
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
     try {
         const { amount, planName, user_id, promoCode } = req.body;
         const conversionRate = 94; 
         let finalAmountInInr = amount * conversionRate;
 
-        // 1. Promo Logic
-        if (promoCode && db) {
+        // Discount logic
+        if (promoCode) {
             const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
             if (promoDoc.exists && promoDoc.data().status === 'active') {
                 const discount = parseFloat(promoDoc.data().discount) || 0;
@@ -32,27 +30,17 @@ export default async function handler(req, res) {
             }
         }
 
-        // 2. Free Access Check (GIVEAWAY100)
-        if (finalAmountInInr <= 0) {
-            return res.status(200).json({ isFree: true });
-        }
-
-        // 3. Razorpay Keys Check
-        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-            return res.status(500).json({ error: "Razorpay keys missing in Vercel settings." });
-        }
+        if (finalAmountInInr <= 0) return res.status(200).json({ isFree: true });
 
         const razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
             key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
 
-        // 4. Order Creation
         const order = await razorpay.orders.create({
-            amount: Math.round(finalAmountInInr * 100), // Paise
+            amount: Math.round(finalAmountInInr * 100),
             currency: "INR",
-            receipt: `traderiq_${Date.now()}`,
-            notes: { user_id, planName, promo: promoCode || "NONE" }
+            receipt: `order_${Date.now()}`
         });
 
         res.status(200).json({
@@ -60,8 +48,7 @@ export default async function handler(req, res) {
             amount: order.amount,
             razorpayKeyId: process.env.RAZORPAY_KEY_ID
         });
-
-    } catch (error) {
-        res.status(500).json({ error: "Order Error: " + error.message });
+    } catch (e) {
+        res.status(500).json({ error: "Order Error: " + e.message });
     }
-                                      }
+}
