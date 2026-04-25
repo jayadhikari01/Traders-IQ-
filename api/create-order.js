@@ -27,11 +27,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Razorpay keys are missing in Vercel settings." });
     }
 
-    const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET,
-    });
-
     try {
         const { amount, planName, user_id, promoCode } = req.body;
         
@@ -40,7 +35,7 @@ export default async function handler(req, res) {
         const conversionRate = 94; // Aapka fixed rate
         let finalAmountInInr = amount * conversionRate;
 
-        // Promo Code Logic
+        // --- PROMO CODE LOGIC START ---
         if (promoCode && db) {
             try {
                 const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
@@ -52,6 +47,24 @@ export default async function handler(req, res) {
                 console.warn("Promo check failed, using base price.");
             }
         }
+        // --- PROMO CODE LOGIC END ---
+
+        // 100% DISCOUNT (FREE ACCESS) CHECK
+        // Agar amount 0 ya usse kam hai, toh Razorpay ko bypass karein
+        if (finalAmountInInr <= 0) {
+            return res.status(200).json({
+                isFree: true,
+                message: "Full Discount Applied! Access Granted.",
+                planName: planName,
+                user_id: user_id
+            });
+        }
+
+        // Razorpay Initialization (Sirf tab jab payment karni ho)
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
 
         const options = {
             amount: Math.round(finalAmountInInr * 100), // Paise mein convert karein
@@ -66,11 +79,12 @@ export default async function handler(req, res) {
         res.status(200).json({
             id: order.id,
             amount: order.amount,
-            razorpayKeyId: process.env.RAZORPAY_KEY_ID // Frontend ko key bhejna zaroori hai
+            razorpayKeyId: process.env.RAZORPAY_KEY_ID 
         });
 
     } catch (error) {
-        console.error("Razorpay Order Error:", error.message);
-        res.status(500).json({ error: "Razorpay Error: " + error.message });
+        console.error("Order Creation Error:", error.message);
+        res.status(500).json({ error: "Internal Error: " + error.message });
     }
-    }
+                }
+            
