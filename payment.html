@@ -32,9 +32,9 @@
             <h3 class="text-xl font-black mb-1">Monthly Pro</h3>
             <div class="text-4xl font-black mb-8 text-slate-900">$9.99</div>
             <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
-                <li>✅ AI Trading Mentor</li>
-                <li>✅ 100+ Performance Badges</li>
-                <li>✅ Profit Target Tracker</li>
+                <li>AI Trading Mentor</li>
+                <li>100+ Performance Badges</li>
+                <li>Profit Target Tracker</li>
             </ul>
             <button onclick="startPayment(9.99, 'Monthly Pro')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
         </div>
@@ -47,9 +47,9 @@
                 <span class="text-4xl font-black text-slate-900">$89.99</span>
             </div>
             <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
-                <li>✅ Unlimited AI Analysis</li>
-                <li>✅ Exclusive Legend Badges</li>
-                <li>✅ Priority Strategy Support</li>
+                <li>Unlimited AI Analysis</li>
+                <li>Exclusive Legend Badges</li>
+                <li>Priority Strategy Support</li>
             </ul>
             <button onclick="startPayment(89.99, 'Annual Elite')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
         </div>
@@ -103,9 +103,11 @@
                     activePromo = code;
                     showToast(`Code ${code} Applied! ✅`);
                     codeInput.style.borderColor = "#10b981";
-                    codeInput.disabled = true;
+                    // Input disabled nahi kiya taaki user code change kar sake
+                    codeInput.disabled = false; 
                 } else {
                     activePromo = null;
+                    codeInput.style.borderColor = "#ef4444";
                     showToast("Invalid or Expired Code!");
                 }
             } catch(e) { 
