@@ -1,20 +1,19 @@
 import Razorpay from 'razorpay';
 import admin from 'firebase-admin';
 
-// Backend crash hone se bachane ke liye optimized initialization
 try {
     if (!admin.apps.length) {
         admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Newline characters ko handle karne ka sabse solid tarika
+                // Solid fix for private key format in Vercel
                 privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.split(String.raw`\n`).join('\n') : undefined,
             }),
         });
     }
 } catch (e) {
-    console.error("Firebase Admin initialization error:", e.message);
+    console.error("Firebase Admin Error:", e.message);
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
@@ -31,23 +30,23 @@ export default async function handler(req, res) {
         const { amount, planName, user_id, promoCode } = req.body;
         
         if (!user_id) {
-            return res.status(400).json({ error: "User ID missing. Please login again." });
+            return res.status(400).json({ error: "User ID missing. Re-login required." });
         }
 
         const conversionRate = 94;
         let finalAmountInInr = amount * conversionRate;
 
-        // Promo logic
         if (promoCode && db) {
             try {
                 const promoRef = db.collection('promos').doc(promoCode.toUpperCase());
                 const promoDoc = await promoRef.get();
                 if (promoDoc.exists && promoDoc.data().status === 'active') {
+                    // Firestore mein discount field ka type Number hona chahiye
                     const discountPercent = promoDoc.data().discount || 0;
                     finalAmountInInr = finalAmountInInr * (1 - (discountPercent / 100));
                 }
             } catch (pErr) {
-                console.error("Promo calculation failed:", pErr.message);
+                console.error("Promo Logic Error:", pErr.message);
             }
         }
 
@@ -66,7 +65,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error("Razorpay Order Error:", error.message);
+        // Isse aapko error message saaf dikhega
         res.status(500).json({ error: error.message });
     }
 }
