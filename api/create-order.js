@@ -10,23 +10,25 @@ if (!admin.apps.length) {
                 privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
             }),
         });
-    } catch (e) { console.error("Firebase Error:", e.message); }
+    } catch (e) { console.error("Firebase Admin Error:", e.message); }
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    // Key check
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-        return res.status(500).json({ error: "Razorpay keys missing." });
+        return res.status(500).json({ error: "Server Configuration Error (Keys Missing)" });
     }
 
     try {
         const { amount, planName, user_id, promoCode } = req.body;
-        const conversionRate = 94; 
+        const conversionRate = 94;
         let finalAmountInInr = amount * conversionRate;
 
-        // 1. Calculate Discount BEFORE creating Razorpay order
+        // 1. Discount calculation
         if (promoCode && db) {
             const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
             if (promoDoc.exists && promoDoc.data().status === 'active') {
@@ -35,12 +37,12 @@ export default async function handler(req, res) {
             }
         }
 
-        // 2. Handle 100% OFF (Amount <= 0)
+        // 2. Free access check
         if (finalAmountInInr <= 0) {
             return res.status(200).json({ isFree: true });
         }
 
-        // 3. Create Razorpay order with Final Discounted Amount
+        // 3. Razorpay Order Creation
         const razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
             key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -58,6 +60,7 @@ export default async function handler(req, res) {
             amount: order.amount,
             razorpayKeyId: process.env.RAZORPAY_KEY_ID
         });
+
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
