@@ -1,11 +1,16 @@
-const Razorpay = require('razorpay');
-const admin = require('firebase-admin');
+import Razorpay from 'razorpay';
+import admin from 'firebase-admin';
 
-// 1. Razorpay Setup
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// 1. Firebase Admin Initialization (Crucial for Promo Check)
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: "traders-iq-app-f5169",
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL, 
+            privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+        })
+    });
+}
 
 // 2. Server-side Prices (The Truth)
 const ORIGINAL_PRICES = {
@@ -13,8 +18,17 @@ const ORIGINAL_PRICES = {
     "Annual Elite": 89.99
 };
 
-exports.createOrder = async (req, res) => {
+// 3. Export Default Handler (Fixed to match your Webhook format)
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
     try {
+        // Razorpay Setup inside handler
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
+        });
+
         const { amount, planName, user_id, promoCode } = req.body;
 
         // Validation: Check if plan exists
@@ -25,7 +39,7 @@ exports.createOrder = async (req, res) => {
 
         let finalAmount = ORIGINAL_PRICES[planName];
 
-        // 3. Secure Promo Verification
+        // 4. Secure Promo Verification
         if (promoCode) {
             try {
                 const db = admin.firestore();
@@ -39,39 +53,36 @@ exports.createOrder = async (req, res) => {
                         console.log(`Promo Applied: ${promoCode}, New Price: ${finalAmount}`);
                     }
                 } else {
-                    console.log("Invalid or Expired Promo Code attempted:", promoCode);
-                    // Optional: return res.status(400).json({ error: "Invalid Promo" });
+                    console.log("Invalid Promo Code attempted:", promoCode);
                 }
             } catch (firestoreError) {
                 console.error("Firestore Promo Fetch Error:", firestoreError);
-                // Agar firestore fail ho, toh hum original price pe continue karenge taaki payment na ruke
             }
         }
 
-        // 4. Currency Conversion (USD to INR)
-        // Note: Razorpay INR mein paise (cents) leta hai. 
-        // 84 multiplier example hai, ise apne rate ke hisaab se set karein.
+        // 5. Currency Conversion (USD to INR)
         const amountInPaise = Math.round(finalAmount * 84 * 100); 
 
         if (amountInPaise <= 0) {
-            return res.json({ isFree: true, amount: 0 });
+            return res.status(200).json({ isFree: true, amount: 0 });
         }
 
-        // 5. Razorpay Order Options
+        // 6. Razorpay Order Options
         const options = {
             amount: amountInPaise,
             currency: "INR",
             receipt: `rcpt_${Date.now()}`,
             notes: {
                 user_id: user_id,
-                plan: planName, // Webhook isi 'plan' key ko use karega
+                plan: planName, 
                 promo: promoCode || "NONE"
             }
         };
 
         const order = await razorpay.orders.create(options);
         
-        res.json({
+        // Return Success Response
+        res.status(200).json({
             ...order,
             razorpayKeyId: process.env.RAZORPAY_KEY_ID
         });
@@ -80,4 +91,5 @@ exports.createOrder = async (req, res) => {
         console.error("Order Creation Error:", error);
         res.status(500).json({ error: "Server Error: Payment could not be initiated" });
     }
-};
+}
+    
