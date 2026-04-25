@@ -23,13 +23,14 @@
 </head>
 <body class="min-h-screen py-20 px-6">
     <div class="mesh-container"></div>
+    
     <div id="toast" class="fixed bottom-10 left-1/2 z-50 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 font-bold text-sm min-w-[320px] -translate-x-1/2">
         <div id="toast-indicator" class="w-2 h-2 rounded-full bg-indigo-500"></div>
         <span id="toast-msg"></span>
     </div>
 
     <div class="max-w-6xl mx-auto text-center mb-16">
-        <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-slate-900 mb-2">Elite Terminal Access</h1>
+        <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-indigo-600 mb-2">Elite Terminal Access</h1>
         <p class="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">An Adhikari Official Venture</p>
     </div>
 
@@ -48,12 +49,11 @@
         </div>
 
         <div class="bento-card p-10 flex flex-col relative overflow-hidden">
-            <div class="absolute top-5 right-5 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">Save 25%</div>
+            <div class="absolute top-5 right-5 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">Save 25%</div>
             <h3 class="text-xl font-black mb-1 premium-text">Annual Elite</h3>
             <div class="flex items-baseline mb-8">
                 <span class="strike">$119.88</span>
                 <span class="font-black annual-price">$89.99</span>
-                <span class="text-sm text-slate-400 font-bold ml-2">/yr</span>
             </div>
 
             <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
@@ -67,7 +67,7 @@
     </div>
 
     <div class="max-w-md mx-auto">
-        <div class="bento-card p-8 border-dashed border-2 border-slate-200 bg-white flex flex-col items-center">
+        <div class="bento-card p-8 border-dashed border-2 border-slate-200 flex flex-col items-center">
             <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold tracking-widest mb-4">
             <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest">Apply Code</button>
         </div>
@@ -92,9 +92,15 @@
         const auth = getAuth(app);
 
         let currentUserId = null;
+        let currentUserEmail = null;
         let activeDiscountCode = null;
 
-        onAuthStateChanged(auth, (user) => { if (user) currentUserId = user.uid; });
+        onAuthStateChanged(auth, (user) => { 
+            if (user) {
+                currentUserId = user.uid;
+                currentUserEmail = user.email;
+            }
+        });
 
         function showAppToast(message, color = '#6366f1') {
             const toast = document.getElementById('toast');
@@ -106,34 +112,44 @@
 
         window.applyPromo = async () => {
             const rawInput = document.getElementById('promoCode').value.trim();
-            if(!rawInput) return showAppToast("Enter a code.", "#f43f5e");
+            if(!rawInput) return showAppToast("Enter a promo code.", "#f43f5e");
+            
             try {
                 const searchCode = rawInput.toUpperCase();
                 const promoSnap = await getDoc(doc(db, "promos", searchCode));
+                
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
                     activeDiscountCode = searchCode;
                     showAppToast("Promo Applied!", "#10b981");
                 } else {
                     activeDiscountCode = null;
-                    showAppToast("Invalid code.", "#f43f5e");
+                    showAppToast("Invalid or expired code.", "#f43f5e");
                 }
-            } catch (e) { showAppToast("Error checking code.", "#f43f5e"); }
+            } catch (e) {
+                showAppToast("Error checking code.", "#f43f5e");
+            }
         };
 
         window.startRazorpayPayment = async (amountUsd, planName) => {
-            if (!currentUserId) return showAppToast("Log in first.", "#f43f5e");
+            if (!currentUserId) return showAppToast("Log in to continue.", "#f43f5e");
+
             try {
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: amountUsd, planName, user_id: currentUserId, promoCode: activeDiscountCode }),
+                    body: JSON.stringify({ 
+                        amount: amountUsd, 
+                        planName: planName,
+                        user_id: currentUserId,
+                        promoCode: activeDiscountCode 
+                    }),
                 });
 
-                const data = await response.json();
+                const orderData = await response.json();
 
-                // 100% OFF REDIRECTION LOGIC
-                if (data.isFree) {
-                    showAppToast("Access Granted!", "#10b981");
+                // 100% OFF Redirection Logic
+                if (orderData.isFree) {
+                    showAppToast("Access Granted! Redirecting...", "#10b981");
                     setTimeout(() => {
                         window.location.href = `success.html?payment_id=FREE_${Date.now()}`;
                     }, 1500);
@@ -141,17 +157,31 @@
                 }
 
                 const options = {
-                    "key": data.razorpayKeyId,
-                    "amount": data.amount,
+                    "key": orderData.razorpayKeyId, 
+                    "amount": orderData.amount, 
                     "currency": "INR",
                     "name": "Traders IQ",
-                    "order_id": data.id,
-                    "handler": (res) => { window.location.href = `success.html?payment_id=${res.razorpay_payment_id}`; },
-                    "theme": { "color": "#6366f1" }
+                    "description": `Upgrade to ${planName}`,
+                    "order_id": orderData.id,
+                    "handler": function (response) {
+                        window.location.href = `success.html?payment_id=${response.razorpay_payment_id}`;
+                    },
+                    "prefill": {
+                        "email": currentUserEmail || ""
+                    },
+                    "theme": {
+                        "color": "#6366f1"
+                    }
                 };
-                new window.Razorpay(options).open();
-            } catch (e) { showAppToast("Payment Failed.", "#f43f5e"); }
+
+                const rzp1 = new window.Razorpay(options);
+                rzp1.open();
+
+            } catch (error) {
+                showAppToast("Payment initiation failed.", "#f43f5e");
+            }
         };
     </script>
 </body>
-</html>
+                </html>
+                
