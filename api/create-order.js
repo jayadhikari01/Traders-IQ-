@@ -10,7 +10,7 @@ if (!admin.apps.length) {
                 privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
             }),
         });
-    } catch (e) { console.error("Firebase Admin Error:", e.message); }
+    } catch (e) { console.error("Firebase Init Error:", e.message); }
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
@@ -18,17 +18,12 @@ const db = admin.apps.length ? admin.firestore() : null;
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    // Key check
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-        return res.status(500).json({ error: "Server Configuration Error (Keys Missing)" });
-    }
-
     try {
         const { amount, planName, user_id, promoCode } = req.body;
-        const conversionRate = 94;
+        const conversionRate = 94; 
         let finalAmountInInr = amount * conversionRate;
 
-        // 1. Discount calculation
+        // 1. Calculate Discount
         if (promoCode && db) {
             const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
             if (promoDoc.exists && promoDoc.data().status === 'active') {
@@ -37,17 +32,22 @@ export default async function handler(req, res) {
             }
         }
 
-        // 2. Free access check
+        // 2. Handle FREE Access (GIVEAWAY100)
         if (finalAmountInInr <= 0) {
             return res.status(200).json({ isFree: true });
         }
 
-        // 3. Razorpay Order Creation
+        // 3. Initialize Razorpay
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+            return res.status(500).json({ error: "Razorpay keys missing in Vercel environment." });
+        }
+
         const razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
             key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
 
+        // 4. Create Order
         const order = await razorpay.orders.create({
             amount: Math.round(finalAmountInInr * 100),
             currency: "INR",
@@ -62,6 +62,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
+        console.error("Order Creation Error:", error);
         res.status(500).json({ error: error.message });
     }
 }
