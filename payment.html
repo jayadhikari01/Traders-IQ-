@@ -34,12 +34,13 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
-        <div class="bento-card p-10 flex flex-col">
+        <div class="bento-card p-10 flex flex-col border-indigo-100 shadow-xl shadow-indigo-50">
             <h3 class="text-xl font-black mb-1 premium-text">Monthly Pro</h3>
             <div class="text-4xl font-black mb-8 text-slate-900">$9.99 <span class="text-sm text-slate-400 font-bold">/mo</span></div>
             <button onclick="startRazorpayPayment(9.99, 'Monthly Pro')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
         </div>
-        <div class="bento-card p-10 flex flex-col relative overflow-hidden">
+
+        <div class="bento-card p-10 flex flex-col border-indigo-200 shadow-2xl shadow-indigo-100 relative overflow-hidden">
             <div class="absolute top-5 right-5 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">Save 25%</div>
             <h3 class="text-xl font-black mb-1 premium-text">Annual Elite</h3>
             <div class="flex items-baseline mb-8">
@@ -52,7 +53,7 @@
 
     <div class="max-w-md mx-auto">
         <div class="bento-card p-8 border-dashed border-2 border-slate-200 bg-white flex flex-col items-center">
-            <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold tracking-widest mb-4 uppercase">
+            <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold tracking-widest mb-4">
             <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest">Apply Code</button>
         </div>
     </div>
@@ -89,22 +90,22 @@
         }
 
         window.applyPromo = async () => {
-            const codeInput = document.getElementById('promoCode').value.trim().toUpperCase();
-            if(!codeInput) return showAppToast("Enter a promo code.", "#f43f5e");
+            const code = document.getElementById('promoCode').value.trim().toUpperCase();
+            if(!code) return showAppToast("Enter code.", "#f43f5e");
             try {
-                const promoSnap = await getDoc(doc(db, "promos", codeInput));
+                const promoSnap = await getDoc(doc(db, "promos", code));
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
-                    activeDiscountCode = codeInput;
+                    activeDiscountCode = code;
                     showAppToast("Promo Applied!", "#10b981");
                 } else {
                     activeDiscountCode = null;
-                    showAppToast("Invalid or expired code.", "#f43f5e");
+                    showAppToast("Invalid code.", "#f43f5e");
                 }
-            } catch (e) { showAppToast("Error checking promo.", "#f43f5e"); }
+            } catch (e) { showAppToast("Error checking code.", "#f43f5e"); }
         };
 
         window.startRazorpayPayment = async (amountUsd, planName) => {
-            if (!currentUserId) return showAppToast("Log in to continue.", "#f43f5e");
+            if (!currentUserId) return showAppToast("Login first.", "#f43f5e");
             try {
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
@@ -113,12 +114,16 @@
                 });
 
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
-
+                
+                // FIXED REDIRECTION LOGIC
                 if (data.isFree) {
-                    showAppToast("Access Granted!", "#10b981");
+                    showAppToast("Success! Redirecting...", "#10b981");
                     setTimeout(() => { window.location.href = `success.html?payment_id=FREE_${Date.now()}`; }, 1500);
                     return;
+                }
+
+                if (!data.id) {
+                    throw new Error(data.error || "Order ID missing");
                 }
 
                 const options = {
@@ -130,10 +135,10 @@
                     "handler": (res) => { window.location.href = `success.html?payment_id=${res.razorpay_payment_id}`; },
                     "theme": { "color": "#6366f1" }
                 };
-                new Razorpay(options).open();
-            } catch (e) {
+                new window.Razorpay(options).open();
+            } catch (e) { 
                 console.error(e);
-                showAppToast("Payment initiation failed.", "#f43f5e");
+                showAppToast(e.message === "Order ID missing" ? "Server Error (Keys?)" : "Payment failed.", "#f43f5e"); 
             }
         };
     </script>
