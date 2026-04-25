@@ -23,14 +23,13 @@
 </head>
 <body class="min-h-screen py-20 px-6">
     <div class="mesh-container"></div>
-    
     <div id="toast" class="fixed bottom-10 left-1/2 z-50 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 font-bold text-sm min-w-[320px] -translate-x-1/2">
         <div id="toast-indicator" class="w-2 h-2 rounded-full bg-indigo-500"></div>
         <span id="toast-msg"></span>
     </div>
 
     <div class="max-w-6xl mx-auto text-center mb-16">
-        <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-indigo-600 mb-2">Elite Terminal Access</h1>
+        <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-slate-900 mb-2">Elite Terminal Access</h1>
         <p class="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">An Adhikari Official Venture</p>
     </div>
 
@@ -38,13 +37,11 @@
         <div class="bento-card p-10 flex flex-col">
             <h3 class="text-xl font-black mb-1 premium-text">Monthly Pro</h3>
             <div class="text-4xl font-black mb-8 text-slate-900">$9.99 <span class="text-sm text-slate-400 font-bold">/mo</span></div>
-            
             <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
-                <li class="flex items-center gap-2">AI Trading Mentor</li>
-                <li class="flex items-center gap-2">100+ Performance Badges</li>
-                <li class="flex items-center gap-2">Profit Target Tracker</li>
+                <li>AI Trading Mentor</li>
+                <li>100+ Performance Badges</li>
+                <li>Profit Target Tracker</li>
             </ul>
-
             <button onclick="startRazorpayPayment(9.99, 'Monthly Pro')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
         </div>
 
@@ -55,21 +52,19 @@
                 <span class="strike">$119.88</span>
                 <span class="font-black annual-price">$89.99</span>
             </div>
-
             <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
-                <li class="flex items-center gap-2">Unlimited AI Analysis</li>
-                <li class="flex items-center gap-2">Exclusive Legend Badges</li>
-                <li class="flex items-center gap-2">Priority Strategy Support</li>
+                <li>Unlimited AI Analysis</li>
+                <li>Exclusive Legend Badges</li>
+                <li>Priority Strategy Support</li>
             </ul>
-
             <button onclick="startRazorpayPayment(89.99, 'Annual Elite')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
         </div>
     </div>
 
     <div class="max-w-md mx-auto">
-        <div class="bento-card p-8 border-dashed border-2 border-slate-200 flex flex-col items-center">
+        <div class="bento-card p-8 border-dashed border-2 border-slate-200 bg-white flex flex-col items-center">
             <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold tracking-widest mb-4">
-            <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest">Apply Code</button>
+            <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all">Apply Promo Code</button>
         </div>
     </div>
 
@@ -92,15 +87,9 @@
         const auth = getAuth(app);
 
         let currentUserId = null;
-        let currentUserEmail = null;
         let activeDiscountCode = null;
 
-        onAuthStateChanged(auth, (user) => { 
-            if (user) {
-                currentUserId = user.uid;
-                currentUserEmail = user.email;
-            }
-        });
+        onAuthStateChanged(auth, (user) => { if (user) currentUserId = user.uid; });
 
         function showAppToast(message, color = '#6366f1') {
             const toast = document.getElementById('toast');
@@ -120,18 +109,16 @@
                 
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
                     activeDiscountCode = searchCode;
-                    showAppToast("Promo Applied!", "#10b981");
+                    showAppToast(`Promo "${searchCode}" applied!`, "#10b981");
                 } else {
                     activeDiscountCode = null;
                     showAppToast("Invalid or expired code.", "#f43f5e");
                 }
-            } catch (e) {
-                showAppToast("Error checking code.", "#f43f5e");
-            }
+            } catch (e) { showAppToast("Error checking code.", "#f43f5e"); }
         };
 
         window.startRazorpayPayment = async (amountUsd, planName) => {
-            if (!currentUserId) return showAppToast("Log in to continue.", "#f43f5e");
+            if (!currentUserId) return showAppToast("Please log in first.", "#f43f5e");
 
             try {
                 const response = await fetch('/api/create-order', {
@@ -147,41 +134,31 @@
 
                 const orderData = await response.json();
 
-                // 100% OFF Redirection Logic
+                // Backend se agar success redirect aata hai
                 if (orderData.isFree) {
-                    showAppToast("Access Granted! Redirecting...", "#10b981");
-                    setTimeout(() => {
-                        window.location.href = `success.html?payment_id=FREE_${Date.now()}`;
-                    }, 1500);
+                    showAppToast("Access Granted!", "#10b981");
+                    setTimeout(() => { window.location.href = `success.html?payment_id=FREE_${Date.now()}`; }, 1500);
                     return;
                 }
 
+                if (!orderData.id) throw new Error("Order creation failed");
+
                 const options = {
-                    "key": orderData.razorpayKeyId, 
-                    "amount": orderData.amount, 
+                    "key": orderData.razorpayKeyId,
+                    "amount": orderData.amount,
                     "currency": "INR",
                     "name": "Traders IQ",
-                    "description": `Upgrade to ${planName}`,
                     "order_id": orderData.id,
-                    "handler": function (response) {
-                        window.location.href = `success.html?payment_id=${response.razorpay_payment_id}`;
-                    },
-                    "prefill": {
-                        "email": currentUserEmail || ""
-                    },
-                    "theme": {
-                        "color": "#6366f1"
-                    }
+                    "handler": (res) => { window.location.href = `success.html?payment_id=${res.razorpay_payment_id}`; },
+                    "theme": { "color": "#6366f1" }
                 };
+                new window.Razorpay(options).open();
 
-                const rzp1 = new window.Razorpay(options);
-                rzp1.open();
-
-            } catch (error) {
-                showAppToast("Payment initiation failed.", "#f43f5e");
+            } catch (error) { 
+                console.error(error);
+                showAppToast("Payment initiation failed.", "#f43f5e"); 
             }
         };
     </script>
 </body>
-                </html>
-                
+</html>
