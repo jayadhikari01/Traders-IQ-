@@ -1,66 +1,78 @@
-import Razorpay from 'razorpay';
-import admin from 'firebase-admin';
+const Razorpay = require('razorpay');
+const admin = require('firebase-admin');
 
-if (!admin.apps.length) {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            }),
-        });
-    } catch (e) { console.error("Firebase Init Error:", e.message); }
-}
+// Initialize Razorpay
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
-const db = admin.apps.length ? admin.firestore() : null;
+// Original Prices (Server-side truth)
+const ORIGINAL_PRICES = {
+    "Monthly Pro": 9.99,
+    "Annual Elite": 89.99
+};
 
-export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
+exports.createOrder = async (req, res) => {
     try {
         const { amount, planName, user_id, promoCode } = req.body;
-        const conversionRate = 94; 
-        let finalAmountInInr = amount * conversionRate;
 
-        console.log(`Processing: ${planName} for User: ${user_id} with Promo: ${promoCode}`);
+        // 1. Validation: Plan check
+        if (!ORIGINAL_PRICES[planName]) {
+            return res.status(400).json({ error: "Invalid Plan" });
+        }
 
-        // Promo Logic
-        if (promoCode && db) {
-            try {
-                const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
-                if (promoDoc.exists && promoDoc.data().status === 'active') {
-                    const discount = parseFloat(promoDoc.data().discount) || 0;
-                    finalAmountInInr = finalAmountInInr * (1 - (discount / 100));
-                    console.log(`Discount Applied: ${discount}%`);
+        // 2. Initial price from server-side truth
+        let finalAmount = ORIGINAL_PRICES[planName];
+
+        // 3. Security Check: Promo Code Verification
+        if (promoCode) {
+            const db = admin.firestore();
+            const promoSnap = await db.collection('promos').doc(promoCode.toUpperCase()).get();
+
+            if (promoSnap.exists && promoSnap.data().status === 'active') {
+                const promoData = promoSnap.data();
+                if (promoData.discount) {
+                    const discountPercent = parseFloat(promoData.discount) / 100;
+                    finalAmount = finalAmount * (1 - discountPercent);
                 }
-            } catch (dbErr) {
-                console.error("Firestore Admin Error:", dbErr.message);
+            } else {
+                // Agar code invalid hai par user ne bheja hai, toh use reject kar sakte hain
+                return res.status(400).json({ error: "Invalid or Expired Promo Code" });
             }
         }
 
-        // Free Access Check
-        if (finalAmountInInr <= 0) return res.status(200).json({ isFree: true });
+        // 4. Final Security Match: Front-end vs Back-end
+        // Hum front-end se aaye 'amount' par bharosa nahi karenge, server wala 'finalAmount' use karenge.
+        const amountInPaise = Math.round(finalAmount * 84 * 100); // USD to INR conversion example (84 multiplier)
 
-        const razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET,
-        });
+        // 5. Check if it's 100% free (100% Discount)
+        if (amountInPaise <= 0) {
+            return res.json({ isFree: true, amount: 0 });
+        }
 
-        const order = await razorpay.orders.create({
-            amount: Math.round(finalAmountInInr * 100),
+        // 6. Create Razorpay Order
+        const options = {
+            amount: amountInPaise,
             currency: "INR",
-            receipt: `traderiq_${Date.now()}`,
-            notes: { user_id, planName, promo: promoCode || "NONE" }
-        });
+            receipt: `receipt_${Date.now()}`,
+            notes: {
+                user_id: user_id,
+                plan: planName,
+                applied_promo: promoCode || "NONE"
+            }
+        };
 
-        res.status(200).json({
-            id: order.id,
-            amount: order.amount,
+        const order = await razorpay.orders.create(options);
+        
+        // Response with Razorpay Key ID for front-end
+        res.json({
+            ...order,
             razorpayKeyId: process.env.RAZORPAY_KEY_ID
         });
 
     } catch (error) {
-        res.status(500).json({ error: "Order Error: " + error.message });
+        console.error("Order Creation Error:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
-}
+};
