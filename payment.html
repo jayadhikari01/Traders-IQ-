@@ -28,64 +28,43 @@
         <span id="toast-msg"></span>
     </div>
 
-    <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col items-center mb-16">
-            <h1 class="text-5xl md:text-6xl font-black tracking-tighter mb-2 text-center text-indigo-600">Elite Terminal Access</h1>
-            <p class="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">An Adhikari Official Venture</p>
+    <div class="max-w-6xl mx-auto text-center mb-16">
+        <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-indigo-600 mb-2">Elite Terminal Access</h1>
+        <p class="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">An Adhikari Official Venture</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
+        <div class="bento-card p-10 flex flex-col border-indigo-100 shadow-xl shadow-indigo-50">
+            <h3 class="text-xl font-black mb-1 premium-text">Monthly Pro</h3>
+            <div class="text-4xl font-black mb-8 text-slate-900">$9.99 <span class="text-sm text-slate-400 font-bold">/mo</span></div>
+            <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
+                <li>AI Trading Mentor</li>
+                <li>100+ Performance Badges</li>
+                <li>Profit Target Tracker</li>
+            </ul>
+            <button onclick="startRazorpayPayment(9.99, 'Monthly Pro')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly Access</button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
-            <div class="bento-card p-10 flex flex-col border-indigo-100 shadow-xl shadow-indigo-50">
-                <h3 class="text-xl font-black mb-1 premium-text">Monthly Pro</h3>
-                <div class="text-4xl font-black mb-8 text-slate-900">$9.99 <span class="text-sm text-slate-400 font-bold">/mo</span></div>
-                <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        AI Trading Mentor
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        100+ Performance Badges
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        Profit Target Tracker
-                    </li>
-                </ul>
-                <button onclick="startRazorpayPayment(9.99, 'Monthly Pro')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly Access</button>
+        <div class="bento-card p-10 flex flex-col border-indigo-200 shadow-2xl shadow-indigo-100 relative overflow-hidden">
+            <div class="absolute top-5 right-5 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">Save 25%</div>
+            <h3 class="text-xl font-black mb-1 premium-text">Annual Elite</h3>
+            <div class="flex items-baseline mb-8">
+                <span class="strike">$119.88</span>
+                <span class="font-black annual-price">$89.99</span>
             </div>
-
-            <div class="bento-card p-10 flex flex-col border-indigo-200 shadow-2xl shadow-indigo-100 relative overflow-hidden">
-                <div class="absolute top-5 right-5 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">Save 25%</div>
-                <h3 class="text-xl font-black mb-1 premium-text">Annual Elite</h3>
-                <div class="flex items-baseline mb-8">
-                    <span class="strike">$119.88</span>
-                    <span class="font-black annual-price">$89.99</span>
-                    <span class="text-sm text-slate-400 font-bold ml-2">/yr</span>
-                </div>
-                <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        Unlimited AI Analysis
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        Exclusive Legend Badges
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        Priority Strategy Support
-                    </li>
-                </ul>
-                <button onclick="startRazorpayPayment(89.99, 'Annual Elite')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual Elite</button>
-            </div>
+            <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
+                <li>Unlimited AI Analysis</li>
+                <li>Exclusive Legend Badges</li>
+                <li>Priority Strategy Support</li>
+            </ul>
+            <button onclick="startRazorpayPayment(89.99, 'Annual Elite')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual Elite</button>
         </div>
+    </div>
 
-        <div class="max-w-md mx-auto">
-            <div class="bento-card p-8 border-dashed border-2 border-slate-200 bg-white flex flex-col items-center">
-                <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold tracking-widest mb-4">
-                <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all">Apply Promo Code</button>
-            </div>
+    <div class="max-w-md mx-auto">
+        <div class="bento-card p-8 border-dashed border-2 border-slate-200 bg-white flex flex-col items-center">
+            <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bento-input p-4 text-sm font-bold tracking-widest mb-4">
+            <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all">Apply Promo Code</button>
         </div>
     </div>
 
@@ -112,10 +91,7 @@
         let activeDiscountCode = null;
 
         onAuthStateChanged(auth, (user) => { 
-            if (user) {
-                currentUserId = user.uid;
-                currentUserEmail = user.email;
-            }
+            if (user) { currentUserId = user.uid; currentUserEmail = user.email; }
         });
 
         function showAppToast(message, color = '#6366f1') {
@@ -127,65 +103,50 @@
         }
 
         window.applyPromo = async () => {
-            const rawInput = document.getElementById('promoCode').value.trim();
-            if(!rawInput) return showAppToast("Please enter a valid promo code.", "#f43f5e");
+            const code = document.getElementById('promoCode').value.trim().toUpperCase();
+            if(!code) return showAppToast("Enter a promo code.", "#f43f5e");
             try {
-                const searchCode = rawInput.toUpperCase();
-                const promoSnap = await getDoc(doc(db, "promos", searchCode));
+                const promoSnap = await getDoc(doc(db, "promos", code));
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
-                    activeDiscountCode = searchCode;
-                    showAppToast(`Promo "${rawInput}" applied! Select your plan.`, "#10b981");
+                    activeDiscountCode = code;
+                    showAppToast("Promo Applied!", "#10b981");
                 } else {
                     activeDiscountCode = null;
-                    showAppToast("Invalid or expired code.", "#f43f5e");
+                    showAppToast("Invalid code.", "#f43f5e");
                 }
             } catch (e) { showAppToast("Error checking code.", "#f43f5e"); }
         };
 
         window.startRazorpayPayment = async (amountUsd, planName) => {
-            if (!currentUserId) return showAppToast("Please log in to continue.", "#f43f5e");
+            if (!currentUserId) return showAppToast("Log in first.", "#f43f5e");
             try {
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        amount: amountUsd, 
-                        planName: planName,
-                        user_id: currentUserId,
-                        promoCode: activeDiscountCode 
-                    }),
+                    body: JSON.stringify({ amount: amountUsd, planName, user_id: currentUserId, promoCode: activeDiscountCode }),
                 });
 
                 const orderData = await response.json();
+                if (orderData.error) throw new Error(orderData.error);
 
-                // FIXED: 100% OFF / FREE Logic check
                 if (orderData.isFree) {
-                    showAppToast("Access Granted! Redirecting...", "#10b981");
-                    setTimeout(() => {
-                        window.location.href = `success.html?payment_id=FREE_${Date.now()}`;
-                    }, 1500);
+                    showAppToast("Access Granted!", "#10b981");
+                    setTimeout(() => { window.location.href = `success.html?payment_id=FREE_${Date.now()}`; }, 1500);
                     return;
                 }
 
                 const options = {
-                    "key": orderData.razorpayKeyId, 
-                    "amount": orderData.amount, 
+                    "key": orderData.razorpayKeyId,
+                    "amount": orderData.amount,
                     "currency": "INR",
                     "name": "Traders IQ",
                     "order_id": orderData.id,
-                    "handler": function (res) {
-                        window.location.href = `success.html?payment_id=${res.razorpay_payment_id}`;
-                    },
+                    "handler": (res) => { window.location.href = `success.html?payment_id=${res.razorpay_payment_id}`; },
                     "prefill": { "email": currentUserEmail || "" },
                     "theme": { "color": "#6366f1" }
                 };
-
-                const rzp1 = new window.Razorpay(options);
-                rzp1.open();
-
-            } catch (error) { 
-                showAppToast("Payment failed.", "#f43f5e"); 
-            }
+                new window.Razorpay(options).open();
+            } catch (e) { showAppToast("Payment failed.", "#f43f5e"); }
         };
     </script>
 </body>
