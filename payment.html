@@ -199,7 +199,7 @@
 
                 const orderData = await response.json();
 
-                // --- 100% DISCOUNT BYPASS LOGIC START ---
+                // --- 100% DISCOUNT REDIRECT LOGIC ---
                 if (orderData.isFree) {
                     showAppToast("Access Granted for Free!", "#10b981");
                     setTimeout(() => {
@@ -207,7 +207,6 @@
                     }, 1500);
                     return; 
                 }
-                // --- 100% DISCOUNT BYPASS LOGIC END ---
 
                 const options = {
                     "key": orderData.razorpayKeyId, 
