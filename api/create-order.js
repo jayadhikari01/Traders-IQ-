@@ -28,9 +28,10 @@ export default async function handler(req, res) {
         const { amount, planName, user_id, promoCode } = req.body;
         if (!user_id) return res.status(400).json({ error: "User ID is required" });
 
-        const conversionRate = 94;
+        const conversionRate = 94; // Aapka original rate
         let finalAmountInInr = amount * conversionRate;
 
+        // Original Promo Logic
         if (promoCode && db) {
             try {
                 const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
@@ -38,17 +39,16 @@ export default async function handler(req, res) {
                     const discount = promoDoc.data().discount || 0;
                     finalAmountInInr = finalAmountInInr * (1 - (discount / 100));
                 }
-            } catch (pErr) { console.warn("Promo failed"); }
+            } catch (pErr) { console.warn("Promo check failed"); }
         }
 
-        // --- 100% OFF LOGIC START ---
+        // --- NEW REDIRECT LOGIC ---
         if (finalAmountInInr <= 0) {
             return res.status(200).json({
                 isFree: true,
-                message: "Access Granted Free"
+                message: "Full Discount Applied!"
             });
         }
-        // --- 100% OFF LOGIC END ---
 
         const razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
@@ -63,9 +63,14 @@ export default async function handler(req, res) {
         };
 
         const order = await razorpay.orders.create(options);
-        res.status(200).json({ id: order.id, amount: order.amount, razorpayKeyId: process.env.RAZORPAY_KEY_ID });
+        res.status(200).json({
+            id: order.id,
+            amount: order.amount,
+            razorpayKeyId: process.env.RAZORPAY_KEY_ID 
+        });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Razorpay Error: " + error.message });
     }
-}
+                }
+                    
