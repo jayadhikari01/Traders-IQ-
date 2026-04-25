@@ -29,7 +29,7 @@
     </div>
 
     <div class="max-w-6xl mx-auto text-center mb-16">
-        <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-slate-900 mb-2">Elite Terminal Access</h1>
+        <h1 class="text-5xl md:text-6xl font-black tracking-tighter text-indigo-600 mb-2">Elite Terminal Access</h1>
         <p class="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">An Adhikari Official Venture</p>
     </div>
 
@@ -100,16 +100,13 @@
         }
 
         window.applyPromo = async () => {
-            const rawInput = document.getElementById('promoCode').value.trim();
-            if(!rawInput) return showAppToast("Enter a promo code.", "#f43f5e");
-            
+            const code = document.getElementById('promoCode').value.trim().toUpperCase();
+            if(!code) return showAppToast("Enter a promo code.", "#f43f5e");
             try {
-                const searchCode = rawInput.toUpperCase();
-                const promoSnap = await getDoc(doc(db, "promos", searchCode));
-                
+                const promoSnap = await getDoc(doc(db, "promos", code));
                 if (promoSnap.exists() && promoSnap.data().status === "active") {
-                    activeDiscountCode = searchCode;
-                    showAppToast(`Promo "${searchCode}" applied!`, "#10b981");
+                    activeDiscountCode = code;
+                    showAppToast("Promo Applied!", "#10b981");
                 } else {
                     activeDiscountCode = null;
                     showAppToast("Invalid or expired code.", "#f43f5e");
@@ -118,30 +115,20 @@
         };
 
         window.startRazorpayPayment = async (amountUsd, planName) => {
-            if (!currentUserId) return showAppToast("Please log in first.", "#f43f5e");
-
+            if (!currentUserId) return showAppToast("Log in to continue.", "#f43f5e");
             try {
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        amount: amountUsd, 
-                        planName: planName,
-                        user_id: currentUserId,
-                        promoCode: activeDiscountCode 
-                    }),
+                    body: JSON.stringify({ amount: amountUsd, planName, user_id: currentUserId, promoCode: activeDiscountCode }),
                 });
-
                 const orderData = await response.json();
 
-                // Backend se agar success redirect aata hai
                 if (orderData.isFree) {
                     showAppToast("Access Granted!", "#10b981");
                     setTimeout(() => { window.location.href = `success.html?payment_id=FREE_${Date.now()}`; }, 1500);
                     return;
                 }
-
-                if (!orderData.id) throw new Error("Order creation failed");
 
                 const options = {
                     "key": orderData.razorpayKeyId,
@@ -153,12 +140,9 @@
                     "theme": { "color": "#6366f1" }
                 };
                 new window.Razorpay(options).open();
-
-            } catch (error) { 
-                console.error(error);
-                showAppToast("Payment initiation failed.", "#f43f5e"); 
-            }
+            } catch (e) { showAppToast("Payment failed.", "#f43f5e"); }
         };
     </script>
 </body>
-</html>
+    </html>
+    
