@@ -19,19 +19,16 @@ const db = admin.apps.length ? admin.firestore() : null;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
         return res.status(500).json({ error: "Razorpay keys missing." });
     }
 
     try {
         const { amount, planName, user_id, promoCode } = req.body;
-        if (!user_id) return res.status(400).json({ error: "User ID missing" });
-
         const conversionRate = 94; 
         let finalAmountInInr = amount * conversionRate;
 
-        // 1. Pehle Discount Calculate Karein
+        // 1. Calculate Discount
         if (promoCode && db) {
             const promoDoc = await db.collection('promos').doc(promoCode.toUpperCase()).get();
             if (promoDoc.exists && promoDoc.data().status === 'active') {
@@ -40,30 +37,29 @@ export default async function handler(req, res) {
             }
         }
 
-        // 2. Agar 100% discount hai toh bina Razorpay ke success bhejein
+        // 2. Check for 100% OFF
         if (finalAmountInInr <= 0) {
             return res.status(200).json({ isFree: true });
         }
 
-        // 3. Razorpay Order ab updated amount ke saath banayein
+        // 3. Create Order with Discounted Price
         const razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
             key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
 
         const order = await razorpay.orders.create({
-            amount: Math.round(finalAmountInInr * 100), 
+            amount: Math.round(finalAmountInInr * 100),
             currency: "INR",
             receipt: `traderiq_${Date.now()}`,
             notes: { user_id, planName, promo: promoCode || "NONE" }
         });
-        
+
         res.status(200).json({
             id: order.id,
             amount: order.amount,
             razorpayKeyId: process.env.RAZORPAY_KEY_ID
         });
-
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
