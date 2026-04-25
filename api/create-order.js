@@ -1,20 +1,20 @@
 import Razorpay from 'razorpay';
 import admin from 'firebase-admin';
 
-// Backend crash hone se bachane ke liye safe initialization
+// Backend crash hone se bachane ke liye optimized initialization
 try {
     if (!admin.apps.length) {
         admin.initializeApp({
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // JSON format aur Vercel environment variables dono ko handle karne ke liye update
-                privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+                // Newline characters ko handle karne ka sabse solid tarika
+                privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.split(String.raw`\n`).join('\n') : undefined,
             }),
         });
     }
 } catch (e) {
-    console.error("Firebase Admin initialization failed:", e.message);
+    console.error("Firebase Admin initialization error:", e.message);
 }
 
 const db = admin.apps.length ? admin.firestore() : null;
@@ -30,43 +30,35 @@ export default async function handler(req, res) {
     try {
         const { amount, planName, user_id, promoCode } = req.body;
         
-        // Validation: Agar user_id missing hai toh error throw karein
         if (!user_id) {
-            return res.status(400).json({ error: "User identity not found. Please re-login." });
+            return res.status(400).json({ error: "User ID missing. Please login again." });
         }
 
         const conversionRate = 94;
         let finalAmountInInr = amount * conversionRate;
 
-        // Promo logic: Database se discount uthane ke liye
+        // Promo logic
         if (promoCode && db) {
             try {
                 const promoRef = db.collection('promos').doc(promoCode.toUpperCase());
                 const promoDoc = await promoRef.get();
-                
                 if (promoDoc.exists && promoDoc.data().status === 'active') {
-                    // Database mein 'discount' field ka number hona zaroori hai
                     const discountPercent = promoDoc.data().discount || 0;
                     finalAmountInInr = finalAmountInInr * (1 - (discountPercent / 100));
                 }
             } catch (pErr) {
-                console.error("Promo check failed, charging full amount:", pErr.message);
+                console.error("Promo calculation failed:", pErr.message);
             }
         }
 
         const options = {
-            amount: Math.round(finalAmountInInr * 100), // Paise mein convert karne ke liye
+            amount: Math.round(finalAmountInInr * 100),
             currency: "INR",
             receipt: `order_${Date.now()}`,
-            notes: { 
-                user_id: user_id, 
-                plan_name: planName, 
-                promo: promoCode || "NONE" 
-            }
+            notes: { user_id, planName, promo: promoCode || "NONE" }
         };
 
         const order = await razorpay.orders.create(options);
-        
         res.status(200).json({
             id: order.id,
             amount: order.amount,
@@ -74,7 +66,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error("Order Creation Error:", error.message);
-        res.status(500).json({ error: "Backend Error: " + error.message });
+        console.error("Razorpay Order Error:", error.message);
+        res.status(500).json({ error: error.message });
     }
 }
