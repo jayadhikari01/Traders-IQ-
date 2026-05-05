@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traders IQ | Elite Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { background: #fdfdff; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; overflow-x: hidden; }
@@ -80,6 +80,11 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // Initialize Cashfree
+        const cashfree = Cashfree({
+            mode: "sandbox" // Approval ke baad isse "production" kar dena
+        });
+
         let currentUserId = null;
         let activePromo = null;
         const originalPrices = { "price-monthly": 9.99, "price-annual": 89.99 };
@@ -97,7 +102,6 @@
             const codeInput = document.getElementById('promoCode');
             const code = codeInput.value.trim().toUpperCase();
             
-            // Reset prices first
             document.getElementById('price-monthly').innerText = originalPrices["price-monthly"];
             document.getElementById('price-annual').innerText = originalPrices["price-annual"];
             
@@ -113,7 +117,6 @@
                     const data = snap.data();
                     activePromo = code;
                     
-                    // Price calculation (assuming discount is in percentage like 50 for 50%)
                     if(data.discount) {
                         const disc = parseFloat(data.discount) / 100;
                         document.getElementById('price-monthly').innerText = (originalPrices["price-monthly"] * (1 - disc)).toFixed(2);
@@ -139,10 +142,17 @@
             
             showToast("Initiating Secure Payment...");
             try {
+                // Yahan aapka backend API '/api/create-order' ab Cashfree ka 'payment_session_id' return karega
                 const res = await fetch('/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: finalAmount, planName: plan, user_id: currentUserId, promoCode: activePromo })
+                    body: JSON.stringify({ 
+                        amount: finalAmount, 
+                        planName: plan, 
+                        user_id: currentUserId, 
+                        promoCode: activePromo,
+                        gateway: 'cashfree' 
+                    })
                 });
                 const data = await res.json();
 
@@ -152,19 +162,16 @@
                     return;
                 }
 
-                if(!data.id) throw new Error(data.error);
+                if(!data.payment_session_id) throw new Error(data.error || "Session ID missing");
 
-                const opt = {
-                    "key": data.razorpayKeyId,
-                    "amount": data.amount,
-                    "currency": "INR",
-                    "order_id": data.id,
-                    "name": "Traders IQ",
-                    "description": plan,
-                    "handler": (r) => { window.location.href = `success.html?payment_id=${r.razorpay_payment_id}`; },
-                    "theme": { "color": "#6366f1" }
+                // Cashfree Checkout Trigger
+                let checkoutOptions = {
+                    paymentSessionId: data.payment_session_id,
+                    redirectTarget: "_self", // Ya "_modal" use kar sakte ho
                 };
-                new Razorpay(opt).open();
+
+                cashfree.checkout(checkoutOptions);
+
             } catch(e) { 
                 console.error(e);
                 showToast("Payment Initiation Failed."); 
