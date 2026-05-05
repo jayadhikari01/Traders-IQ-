@@ -119,17 +119,34 @@
         window.startPayment = async (priceId, planType) => {
             if(!currentUserId) return showToast("Please login first!");
 
-            // Updated with your actual links
-            const monthlyLink = "https://payments.cashfree.com/links?code=jabgqcfpj4sg_AAAAAAATdl0";
-            const annualLink = "https://payments.cashfree.com/links?code=tabgv06ert3g_AAAAAAATdl0";
+            // UI se discounted price fetch kar rahe hain
+            const finalPrice = document.getElementById(priceId).innerText;
+            showToast(`Initializing ${planType} Subscription for $${finalPrice}...`);
 
-            showToast("Redirecting to Secure Payment...");
+            try {
+                // Dynamic order request to backend API
+                const response = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        amount: finalPrice,
+                        plan: planType // 'monthly' ya 'annual' pass ho raha hai
+                    })
+                });
 
-            let finalLink = (planType === 'monthly') ? monthlyLink : annualLink;
+                const session = await response.json();
 
-            // Adding customer_id so webhook can update Firebase
-            const separator = finalLink.includes('?') ? '&' : '?';
-            window.location.href = `${finalLink}${separator}customer_id=${currentUserId}`;
+                if (session.payment_link) {
+                    // Redirecting to dynamic Cashfree link with correct amount and ID
+                    window.location.href = session.payment_link;
+                } else {
+                    showToast("Error creating payment link. Try again.");
+                }
+            } catch (error) {
+                console.error("Payment Link Error:", error);
+                showToast("Connection Error! Check your internet.");
+            }
         };
     </script>
 </body>
