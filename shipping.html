@@ -6,35 +6,41 @@
     <title>Shipping & Delivery | Traders IQ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfdff; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfdff; color: #1e293b; }
+        .mesh { position: fixed; inset: 0; z-index: -1; background: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(34, 211, 238, 0.05) 0px, transparent 50%); }
+        section { border-bottom: 1px solid #f1f5f9; padding-bottom: 2rem; }
     </style>
 </head>
-<body class="p-6 md:p-20">
-    <div class="max-w-3xl mx-auto bg-white p-10 md:p-16 rounded-[3rem] border border-slate-100 shadow-xl">
-        <h1 class="text-4xl font-black tracking-tighter text-slate-900 mb-8 uppercase">Shipping & Delivery</h1>
-        
-        <div class="space-y-8 text-slate-600 leading-relaxed">
-            <p><strong>Traders IQ</strong> is a Digital Software-as-a-Service (SaaS) platform. Because our products are digital, there is no physical shipping involved.</p>
+<body class="p-6 md:p-12 lg:p-20">
+    <div class="mesh"></div>
+    <div class="max-w-4xl mx-auto bg-white p-8 md:p-16 rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40">
+        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-8 inline-block px-4 py-2 bg-indigo-50 rounded-full transition-all hover:bg-indigo-100">← Back to Terminal</a>
 
-            <div>
-                <h2 class="text-lg font-extrabold text-slate-900 mb-2">Delivery Method</h2>
-                <p>Upon successful payment confirmation via our payment gateway, your Elite Terminal access is activated <strong>instantaneously</strong>. You will receive a confirmation email, and your account features will be unlocked immediately on the dashboard.</p>
-            </div>
-
-            <div>
-                <h2 class="text-lg font-extrabold text-slate-900 mb-2">Delivery Timeframe</h2>
-                <p>Access is provided 24/7. In rare cases of technical delays, activation may take up to 24 hours. If you do not have access after 24 hours, please contact our support team.</p>
-            </div>
-
-            <div class="bg-indigo-50 p-8 rounded-3xl border border-indigo-100">
-                <h2 class="text-lg font-extrabold text-indigo-900 mb-2">Support Contact</h2>
-                <p class="text-indigo-800 font-medium">For any delivery or access issues, please email us at:<br><strong>admin@tradersiq.xyz</strong></p>
-            </div>
+        <div class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 mt-2 uppercase">Shipping & Delivery</h1>
+            <p class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-4">Digital Product Policy</p>
         </div>
+        
+        <div class="space-y-10 text-slate-600 leading-relaxed text-sm md:text-base">
+            <section>
+                <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">1. Digital Delivery</h2>
+                <p>Traders IQ is a <strong>Digital Software-as-a-Service (SaaS)</strong> platform. We do not ship physical products. All features and services are delivered electronically via our web terminal.</p>
+            </section>
 
-        <div class="mt-16 pt-8 border-t border-slate-100">
-            <a href="index.html" class="text-indigo-600 font-bold uppercase tracking-widest text-xs">← Return to Home</a>
+            <section class="bg-indigo-50/30 p-8 rounded-[2rem] border border-indigo-100/50">
+                <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">2. Instant Activation</h2>
+                <p>Upon successful payment confirmation through our integrated payment gateways, your premium subscription will be activated <strong>immediately</strong>. You will gain instant access to all elite terminal features on your dashboard.</p>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">3. Confirmation</h2>
+                <p>A digital receipt and activation confirmation will be sent to your registered email address (provided via Firebase Authentication) immediately after the transaction is complete.</p>
+            </section>
+
+            <div class="pt-16 text-center">
+                <p class="text-[10px] font-black uppercase tracking-[0.5em] text-slate-300">TRADERS IQ • INSTANT DIGITAL FULFILLMENT</p>
+            </div>
         </div>
     </div>
 </body>
