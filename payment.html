@@ -36,7 +36,7 @@
                 <li>100+ Performance Badges</li>
                 <li>Profit Target Tracker</li>
             </ul>
-            <button onclick="startPayment('price-monthly', 'Monthly Pro')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
+            <button onclick="startPayment('price-monthly', 'monthly')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
         </div>
 
         <div class="bento-card p-10 flex flex-col border-indigo-200 shadow-2xl relative overflow-hidden">
@@ -51,7 +51,7 @@
                 <li>Exclusive Legend Badges</li>
                 <li>Priority Strategy Support</li>
             </ul>
-            <button onclick="startPayment('price-annual', 'Annual Elite')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
+            <button onclick="startPayment('price-annual', 'annual')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
         </div>
     </div>
 
@@ -80,10 +80,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Initialize Cashfree
-        const cashfree = Cashfree({
-            mode: "sandbox" // Approval ke baad isse "production" kar dena
-        });
+        const cashfree = Cashfree({ mode: "sandbox" });
 
         let currentUserId = null;
         let activePromo = null;
@@ -101,80 +98,39 @@
         window.applyPromo = async () => {
             const codeInput = document.getElementById('promoCode');
             const code = codeInput.value.trim().toUpperCase();
-            
             document.getElementById('price-monthly').innerText = originalPrices["price-monthly"];
             document.getElementById('price-annual').innerText = originalPrices["price-annual"];
-            
-            if(!code) {
-                activePromo = null;
-                codeInput.style.borderColor = "transparent";
-                return;
-            }
-            
+            if(!code) { activePromo = null; codeInput.style.borderColor = "transparent"; return; }
             try {
                 const snap = await getDoc(doc(db, "promos", code));
                 if(snap.exists() && snap.data().status === "active") {
-                    const data = snap.data();
-                    activePromo = code;
-                    
+                    const data = snap.data(); activePromo = code;
                     if(data.discount) {
                         const disc = parseFloat(data.discount) / 100;
                         document.getElementById('price-monthly').innerText = (originalPrices["price-monthly"] * (1 - disc)).toFixed(2);
                         document.getElementById('price-annual').innerText = (originalPrices["price-annual"] * (1 - disc)).toFixed(2);
                     }
-
                     showToast(`Code ${code} Applied! ✅`);
                     codeInput.style.borderColor = "#10b981";
                 } else {
-                    activePromo = null;
-                    codeInput.style.borderColor = "#ef4444";
-                    showToast("Invalid or Expired Code!");
+                    activePromo = null; codeInput.style.borderColor = "#ef4444"; showToast("Invalid or Expired Code!");
                 }
-            } catch(e) { 
-                console.error(e);
-                showToast("Rules Error! Check Firebase Console."); 
-            }
+            } catch(e) { console.error(e); showToast("Rules Error!"); }
         };
 
-        window.startPayment = async (priceId, plan) => {
+        window.startPayment = async (priceId, planType) => {
             if(!currentUserId) return showToast("Please login first!");
-            const finalAmount = parseFloat(document.getElementById(priceId).innerText);
-            
-            showToast("Initiating Secure Payment...");
-            try {
-                // Yahan aapka backend API '/api/create-order' ab Cashfree ka 'payment_session_id' return karega
-                const res = await fetch('/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        amount: finalAmount, 
-                        planName: plan, 
-                        user_id: currentUserId, 
-                        promoCode: activePromo,
-                        gateway: 'cashfree' 
-                    })
-                });
-                const data = await res.json();
 
-                if(data.isFree) {
-                    showToast("Success! Redirecting...");
-                    setTimeout(() => { window.location.href = `success.html?payment_id=FREE_${Date.now()}`; }, 1500);
-                    return;
-                }
+            // Vercel Variables fetch karne ka logic
+            const monthlyLink = "process.env.NEXT_PUBLIC_CASHFREE_MONTHLY_LINK";
+            const annualLink = "process.env.NEXT_PUBLIC_CASHFREE_ANNUAL_LINK";
 
-                if(!data.payment_session_id) throw new Error(data.error || "Session ID missing");
+            showToast("Redirecting to Secure Payment...");
 
-                // Cashfree Checkout Trigger
-                let checkoutOptions = {
-                    paymentSessionId: data.payment_session_id,
-                    redirectTarget: "_self", // Ya "_modal" use kar sakte ho
-                };
-
-                cashfree.checkout(checkoutOptions);
-
-            } catch(e) { 
-                console.error(e);
-                showToast("Payment Initiation Failed."); 
+            if (planType === 'monthly') {
+                window.location.href = monthlyLink;
+            } else if (planType === 'annual') {
+                window.location.href = annualLink;
             }
         };
     </script>
