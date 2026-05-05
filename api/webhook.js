@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import crypto from 'crypto';
 
+// Firebase Admin initialization
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -17,15 +18,15 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
     try {
-        // Cashfree raw body and signature setup
+        // Raw body ko capture karna signature verification ke liye zaroori hai
         const chunks = [];
         for await (const chunk of req) {
             chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
         }
         const rawBody = Buffer.concat(chunks);
 
-        // 1. Cashfree Signature Verification
-        // Vercel mein 'CASHFREE_WEBHOOK_SECRET' variable add karein
+        // 1. CASHFREE SIGNATURE VERIFICATION
+        // Vercel mein 'CASHFREE_WEBHOOK_SECRET' variable mein dashboard wali Secret Key daalein
         const secret = process.env.CASHFREE_WEBHOOK_SECRET; 
         const ts = req.headers['x-webhook-timestamp'];
         const signature = req.headers['x-webhook-signature'];
@@ -40,25 +41,25 @@ export default async function handler(req, res) {
         }
 
         const payload = JSON.parse(rawBody.toString());
-        const eventType = payload.type; // Cashfree uses 'type' instead of 'event'
+        const eventType = payload.type; 
+        const data = payload.data;
         
-        // 2. Extract Data (Cashfree Payload Structure)
-        // Note: Payment Links use kar rahe hain toh data.customer_details se UID milegi
-        const paymentData = payload.data.payment;
-        const customerDetails = payload.data.customer_details;
-        
-        const userId = customerDetails ? customerDetails.customer_id : null; 
-        const planName = payload.data.order ? payload.data.order.order_note : 'Elite Access';
+        // 2. DATA EXTRACTION
+        // Payment Links mein customer_id hi user ki Firebase UID hoti hai
+        const userId = data.customer_details ? data.customer_details.customer_id : null; 
+        const planName = data.order ? data.order.order_note : 'Elite Access';
+        const paymentId = data.payment ? data.payment.cf_payment_id : 'N/A';
+        const orderId = data.order ? data.order.order_id : 'N/A';
 
-        // 3. Payment Success Logic
-        if (eventType === 'PAYMENT_SUCCESS_WEBHOOK' || eventType === 'ORDER_PAID') {
+        // 3. PAYMENT SUCCESS LOGIC (ORDER_PAID)
+        if (eventType === 'ORDER_PAID' || eventType === 'PAYMENT_SUCCESS_WEBHOOK') {
             if (userId) {
                 await db.collection('users').doc(userId).set({
                     isPro: true,
                     status: "active",
                     plan: planName,
-                    paymentId: paymentData.cf_payment_id,
-                    orderId: payload.data.order.order_id,
+                    paymentId: paymentId,
+                    orderId: orderId,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
 
@@ -67,7 +68,7 @@ export default async function handler(req, res) {
             }
         }
 
-        // 4. Handle Failure
+        // 4. PAYMENT FAILURE LOGIC
         if (eventType === 'PAYMENT_FAILED_WEBHOOK') {
             if (userId) {
                 await db.collection('users').doc(userId).update({
@@ -87,5 +88,6 @@ export default async function handler(req, res) {
     }
 }
 
+// Vercel ko body parse karne se rokna zaroori hai signature verify karne ke liye
 export const config = { api: { bodyParser: false } };
-
+                                    
