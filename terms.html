@@ -9,40 +9,40 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfdff; color: #1e293b; }
         .mesh { position: fixed; inset: 0; z-index: -1; background: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0px, transparent 50%); }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 1); }
         section { border-bottom: 1px solid #f1f5f9; padding-bottom: 2rem; }
         section:last-child { border: none; }
     </style>
 </head>
 <body class="p-6 md:p-12 lg:p-20">
     <div class="mesh"></div>
-    <div class="max-w-4xl mx-auto bg-white p-8 md:p-16 rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-12 gap-6">
-            <div>
-                <a href="/" class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-4 inline-block px-4 py-2 bg-indigo-50 rounded-full">← Back to Terminal</a>
-                <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 mt-2">Legal Terms</h1>
-            </div>
+    <div class="max-w-4xl mx-auto glass-card p-8 md:p-16 rounded-[3rem] shadow-2xl shadow-slate-200/40">
+        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-8 inline-block px-4 py-2 bg-indigo-50 rounded-full transition-all hover:bg-indigo-100 hover:scale-105">← Back to Terminal</a>
+
+        <div class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 mt-2 uppercase">Terms of Service</h1>
+            <p class="text-indigo-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-4">Operational Guidelines & User Agreement</p>
         </div>
         
         <div class="space-y-10 text-slate-600 leading-relaxed text-sm md:text-base">
+            <div class="p-8 bg-slate-900 rounded-[2rem] shadow-xl shadow-slate-200 mb-8 transform transition-transform hover:scale-[1.01]">
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Our Operational Mission</h3>
+                <p class="text-white font-bold text-lg leading-snug">To provide a stable, high-performance environment where discipline is rewarded and trading performance is accurately analyzed for consistent growth.</p>
+            </div>
+
+            <section class="bg-amber-50 p-8 rounded-[2rem] border border-amber-100">
+                <h2 class="text-lg font-black text-amber-900 mb-4 uppercase tracking-tight flex items-center gap-2">⚠️ Financial Disclosure</h2>
+                <p class="text-amber-900 font-medium italic">Traders IQ is a data analytics and journaling tool. We do not provide financial advice, investment recommendations, or trading signals. All trade entries, analysis, and mentor feedback are for educational purposes and performance tracking only. Trading involves significant risk; you are solely responsible for your own financial decisions.</p>
+            </section>
+
             <section>
-                <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight flex items-center gap-2">
-                    <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> 1. Scope of Service
-                </h2>
-                <p>Traders IQ provides a cloud-based trading journal, performance analytics, and AI-driven mentoring tools. These services are designed for educational and record-keeping purposes only. We do not provide financial advice, trading signals, or managed account services.</p>
+                <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight flex items-center gap-2">1. Scope of Service</h2>
+                <p>Traders IQ provides a cloud-based trading journal and performance analytics terminal. These services are for educational and record-keeping purposes only. We do not provide financial advice, signals, or portfolio management.</p>
             </section>
 
             <section class="bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
                 <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">2. Trial & Billing</h2>
-                <div class="space-y-4">
-                    <div class="flex gap-4">
-                        <div class="shrink-0 w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600 font-bold">01</div>
-                        <p><span class="font-bold text-slate-900">1-Day Full Access Trial:</span> New users are eligible for a 24-hour free trial of the Elite Terminal. No charges are applied during this window.</p>
-                    </div>
-                    <div class="flex gap-4">
-                        <div class="shrink-0 w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600 font-bold">02</div>
-                        <p><span class="font-bold text-slate-900">Cancel Anytime:</span> Subscriptions are billed via Lemon Squeezy. You may cancel your subscription at any time through your dashboard. Access will remain active until the end of the current billing cycle.</p>
-                    </div>
-                </div>
+                <p><span class="font-bold text-slate-900">1-Day Full Access Trial:</span> New users are eligible for a 24-hour free trial of the Elite Terminal. Subscriptions are billed via Lemon Squeezy, and you may cancel at any time through your dashboard.</p>
             </section>
 
             <section>
@@ -59,6 +59,17 @@
                 <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">5. User Obligations</h2>
                 <p>Users must provide accurate information for trade logging. Any attempt to reverse-engineer the AI mentor logic or bypass subscription gates will result in an immediate and permanent account ban without notice.</p>
             </section>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div class="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-2">Developer</h3>
+                    <p class="font-bold text-slate-900 leading-tight">Adhikari Official<br>Uttarakhand, India</p>
+                </div>
+                <div class="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-2">Support Email</h3>
+                    <a href="mailto:admin@tradersiq.xyz" class="font-bold text-slate-900 hover:text-indigo-600 transition-colors break-all">admin@tradersiq.xyz</a>
+                </div>
+            </div>
 
             <div class="pt-16 border-t border-slate-100 mt-12 flex flex-col items-center">
                 <p class="text-[10px] font-black uppercase tracking-[0.5em] text-slate-300 mb-4">Traders IQ • An Adhikari Official Venture</p>
