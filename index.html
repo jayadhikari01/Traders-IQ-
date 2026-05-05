@@ -6,6 +6,7 @@
     
     <title>Traders IQ | The Elite Terminal</title>
     <link rel="icon" href="favicon.png" type="image/png">
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -211,15 +212,13 @@
                     <div class="flex flex-col gap-4">
                         <a href="privacy.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Privacy Policy</a>
                         <a href="terms.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Terms of Service</a>
-                        <a href="shipping.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Shipping & Delivery</a>
+                        <a href="about.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">About Us</a>
+                        <a href="shipping.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Shipping & Returns</a>
                     </div>
                 </div>
 
                 <div>
                     <h4 class="text-indigo-400 font-black text-[10px] tracking-[0.3em] uppercase mb-8">Official</h4>
-                    <div class="flex flex-col gap-4 mb-2">
-                        <a href="about.html" class="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">About Us</a>
-                    </div>
                     <p class="text-slate-300 text-sm font-black mb-2 uppercase">Adhikari Official</p>
                     <p class="text-slate-500 text-xs font-medium mb-8">Uttarakhand, India</p>
                     
@@ -253,6 +252,11 @@
         const auth = getAuth(app);
         const analytics = getAnalytics(app);
 
+        // Initialize Cashfree
+        const cashfree = Cashfree({
+            mode: "sandbox" // Change to "production" once approved
+        });
+
         // User login check
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -261,5 +265,5 @@
         });
     </script>
 </body>
-                    </html>
-                                                                                                                
+                        </html>
+    
