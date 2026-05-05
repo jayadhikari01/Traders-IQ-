@@ -9,36 +9,40 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdfdff; color: #1e293b; }
         .mesh { position: fixed; inset: 0; z-index: -1; background: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0px, transparent 50%); }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 1); }
         section { border-bottom: 1px solid #f1f5f9; padding-bottom: 2rem; }
         section:last-child { border: none; }
     </style>
 </head>
 <body class="p-6 md:p-12 lg:p-20">
     <div class="mesh"></div>
-    <div class="max-w-4xl mx-auto bg-white p-8 md:p-16 rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-12 gap-6">
-            <div>
-                <a href="/" class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-4 inline-block px-4 py-2 bg-indigo-50 rounded-full">← Back to Terminal</a>
-                <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 mt-2">Privacy Policy</h1>
-            </div>
+    <div class="max-w-4xl mx-auto glass-card p-8 md:p-16 rounded-[3rem] shadow-2xl shadow-slate-200/40">
+        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-8 inline-block px-4 py-2 bg-indigo-50 rounded-full transition-all hover:bg-indigo-100 hover:scale-105">← Back to Terminal</a>
+
+        <div class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 mt-2 uppercase">Privacy Policy</h1>
+            <p class="text-indigo-500 font-bold text-[10px] uppercase tracking-[0.3em] mt-4">Data Protection & Security Protocol</p>
         </div>
         
         <div class="space-y-10 text-slate-600 leading-relaxed text-sm md:text-base">
+            <div class="p-8 bg-indigo-600 rounded-[2rem] shadow-xl shadow-indigo-100 mb-8 transform transition-transform hover:scale-[1.01]">
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-100 mb-2">Our Privacy Mission</h3>
+                <p class="text-white font-bold text-lg leading-snug">To provide a secure sanctuary for your trading data, ensuring that your intellectual property and edge remain strictly your own through elite encryption.</p>
+            </div>
+
             <section>
-                <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight flex items-center gap-2">
-                    <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> 1. Information We Collect
-                </h2>
-                <p>We collect essential information required to maintain your trading terminal. This includes your email address via Firebase Authentication for identity verification and the trade-specific data (PnL, strategy notes, and timestamps) that you manually input into your journal.</p>
+                <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight flex items-center gap-2">1. Information We Collect</h2>
+                <p>We collect essential information required to maintain your trading terminal. This includes your email address via Firebase Authentication for identity verification and the trade-specific data that you manually input into your journal.</p>
             </section>
 
             <section class="bg-indigo-50/30 p-8 rounded-[2rem] border border-indigo-100/50">
                 <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">2. Payment & Financial Security</h2>
-                <p>Your financial privacy is our priority. All transactions are handled securely by <span class="font-bold text-indigo-700">Lemon Squeezy</span>. Traders IQ never sees, stores, or processes your credit card numbers, CVVs, or bank account details. We only receive a confirmation of payment to activate your Elite access.</p>
+                <p>Your financial privacy is our priority. All transactions are handled securely by Lemon Squeezy. Traders IQ never sees, stores, or processes your credit card numbers or bank details.</p>
             </section>
 
             <section>
                 <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">3. Data Security (Firebase)</h2>
-                <p>All your trading history is stored using industry-standard encryption on Google Firebase Cloud. Your data is private and linked strictly to your unique User ID (UID). We implement strict security rules to ensure that only you can read or write to your personal database.</p>
+                <p>All your trading history is stored using industry-standard encryption on Google Firebase Cloud. Your data is linked strictly to your unique User ID (UID). We implement strict security rules to ensure that only you can read or write to your personal database.</p>
             </section>
 
             <section>
@@ -50,6 +54,17 @@
                 <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-tight">5. Data Deletion</h2>
                 <p>You have the right to request the permanent deletion of your account and all associated trade data. Once deleted, your logs cannot be recovered from our cloud servers.</p>
             </section>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div class="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-2">Developer Details</h3>
+                    <p class="font-bold text-slate-900 leading-tight">Adhikari Official<br>Uttarakhand, India</p>
+                </div>
+                <div class="p-8 bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-2">Contact Us</h3>
+                    <a href="mailto:admin@tradersiq.xyz" class="font-bold text-slate-900 hover:text-indigo-600 transition-colors break-all">admin@tradersiq.xyz</a>
+                </div>
+            </div>
 
             <div class="pt-16 border-t border-slate-100 mt-12 flex flex-col items-center">
                 <p class="text-[10px] font-black uppercase tracking-[0.5em] text-slate-300 mb-4">Traders IQ • An Adhikari Official Venture</p>
