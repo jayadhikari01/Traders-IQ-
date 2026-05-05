@@ -119,17 +119,17 @@
         window.startPayment = async (priceId, planType) => {
             if(!currentUserId) return showToast("Please login first!");
 
-            // Vercel Variables logic
-            const monthlyLink = process.env.NEXT_PUBLIC_CASHFREE_MONTHLY_LINK;
-            const annualLink = process.env.NEXT_PUBLIC_CASHFREE_ANNUAL_LINK;
+            // Updated with your actual links
+            const monthlyLink = "https://payments.cashfree.com/links?code=jabgqcfpj4sg_AAAAAAATdl0";
+            const annualLink = "https://payments.cashfree.com/links?code=tabgv06ert3g_AAAAAAATdl0";
 
             showToast("Redirecting to Secure Payment...");
 
-            if (planType === 'monthly') {
-                window.location.href = monthlyLink;
-            } else if (planType === 'annual') {
-                window.location.href = annualLink;
-            }
+            let finalLink = (planType === 'monthly') ? monthlyLink : annualLink;
+
+            // Adding customer_id so webhook can update Firebase
+            const separator = finalLink.includes('?') ? '&' : '?';
+            window.location.href = `${finalLink}${separator}customer_id=${currentUserId}`;
         };
     </script>
 </body>
