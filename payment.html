@@ -80,8 +80,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        const cashfree = Cashfree({ mode: "sandbox" });
-
         let currentUserId = null;
         let activePromo = null;
         const originalPrices = { "price-monthly": 9.99, "price-annual": 89.99 };
@@ -121,9 +119,9 @@
         window.startPayment = async (priceId, planType) => {
             if(!currentUserId) return showToast("Please login first!");
 
-            // Vercel Variables fetch karne ka logic
-            const monthlyLink = "process.env.NEXT_PUBLIC_CASHFREE_MONTHLY_LINK";
-            const annualLink = "process.env.NEXT_PUBLIC_CASHFREE_ANNUAL_LINK";
+            // Vercel Variables logic
+            const monthlyLink = process.env.NEXT_PUBLIC_CASHFREE_MONTHLY_LINK;
+            const annualLink = process.env.NEXT_PUBLIC_CASHFREE_ANNUAL_LINK;
 
             showToast("Redirecting to Secure Payment...");
 
