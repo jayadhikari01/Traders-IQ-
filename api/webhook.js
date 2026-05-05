@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import crypto from 'crypto';
 
-// Firebase Admin initialization
+// Firebase Admin Setup (Same as before)
 if (!admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
     try {
-        // Raw body ko capture karna signature verification ke liye zaroori hai
+        // Raw body capture logic for signature verification
         const chunks = [];
         for await (const chunk of req) {
             chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         const data = payload.data;
         
         // 2. DATA EXTRACTION
-        // Payment Links mein customer_id hi user ki Firebase UID hoti hai
+        // Payment Links mein customer_id user ki Firebase UID hoti hai
         const userId = data.customer_details ? data.customer_details.customer_id : null; 
         const planName = data.order ? data.order.order_note : 'Elite Access';
         const paymentId = data.payment ? data.payment.cf_payment_id : 'N/A';
@@ -88,6 +88,6 @@ export default async function handler(req, res) {
     }
 }
 
-// Vercel ko body parse karne se rokna zaroori hai signature verify karne ke liye
+// Raw body verification ke liye bodyParser false hona zaroori hai
 export const config = { api: { bodyParser: false } };
-                                    
+            
