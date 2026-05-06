@@ -119,33 +119,19 @@
         window.startPayment = async (priceId, planType) => {
             if(!currentUserId) return showToast("Please login first!");
 
-            // UI se discounted price fetch kar rahe hain
-            const finalPrice = document.getElementById(priceId).innerText;
-            showToast(`Initializing ${planType} Subscription for $${finalPrice}...`);
+            showToast(`Redirecting to ${planType} Subscription...`);
 
-            try {
-                // Dynamic order request to backend API
-                const response = await fetch('/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: currentUserId,
-                        amount: finalPrice,
-                        plan: planType // 'monthly' ya 'annual' pass ho raha hai
-                    })
-                });
+            // Direct Links Update
+            const links = {
+                'monthly': 'https://payments.cashfree.com/links?code=Iabkpsmso0j0_AAAAAAATdl0',
+                'annual': 'https://payments.cashfree.com/links?code=Fabkq545dee0_AAAAAAATdl0'
+            };
 
-                const session = await response.json();
-
-                if (session.payment_link) {
-                    // Redirecting to dynamic Cashfree link with correct amount and ID
-                    window.location.href = session.payment_link;
-                } else {
-                    showToast("Error creating payment link. Try again.");
-                }
-            } catch (error) {
-                console.error("Payment Link Error:", error);
-                showToast("Connection Error! Check your internet.");
+            // Redirecting directly to your Cashfree links
+            if (links[planType]) {
+                window.location.href = links[planType];
+            } else {
+                showToast("Error finding payment link.");
             }
         };
     </script>
