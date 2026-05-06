@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traders IQ | Elite Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { background: #fdfdff; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; overflow-x: hidden; }
@@ -30,61 +29,36 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
         <div class="bento-card p-10 flex flex-col border-indigo-100 shadow-xl">
             <h3 class="text-xl font-black mb-1">Monthly Pro</h3>
-            <div class="text-4xl font-black mb-8 text-slate-900">$<span id="price-monthly">9.99</span></div>
+            <div class="text-4xl font-black mb-8 text-slate-900">₹<span id="price-monthly">699</span></div>
             <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
                 <li>AI Trading Mentor</li>
                 <li>100+ Performance Badges</li>
                 <li>Profit Target Tracker</li>
             </ul>
-            <button onclick="startPayment('price-monthly', 'monthly')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
+            <button onclick="redirectToPayment('monthly')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
         </div>
 
         <div class="bento-card p-10 flex flex-col border-indigo-200 shadow-2xl relative overflow-hidden">
-            <div class="absolute top-5 right-5 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">Save 25%</div>
+            <div class="absolute top-5 right-5 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">Save 20%</div>
             <h3 class="text-xl font-black mb-1">Annual Elite</h3>
             <div class="flex items-baseline mb-8">
-                <span class="text-slate-400 line-through text-lg mr-2 font-bold">$119.88</span>
-                <span class="text-4xl font-black text-slate-900">$<span id="price-annual">89.99</span></span>
+                <span class="text-slate-400 line-through text-lg mr-2 font-bold">₹8,388</span>
+                <span class="text-4xl font-black text-slate-900">₹<span id="price-annual">5,999</span></span>
             </div>
             <ul class="space-y-4 mb-10 text-sm font-semibold text-slate-600 flex-grow">
                 <li>Unlimited AI Analysis</li>
                 <li>Exclusive Legend Badges</li>
                 <li>Priority Strategy Support</li>
             </ul>
-            <button onclick="startPayment('price-annual', 'annual')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
+            <button onclick="redirectToPayment('annual')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
         </div>
     </div>
 
-    <div class="max-w-md mx-auto">
-        <div class="bento-card p-8 border-dashed border-2 bg-white flex flex-col items-center">
-            <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bg-slate-100 p-4 rounded-xl text-sm font-bold text-center mb-4 outline-none border-2 border-transparent focus:border-indigo-400 transition-all">
-            <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Apply Promo Code</button>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
-            authDomain: "traders-iq-app-f5169.firebaseapp.com",
-            projectId: "traders-iq-app-f5169",
-            storageBucket: "traders-iq-app-f5169.firebasestorage.app",
-            messagingSenderId: "411253913617",
-            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0"
+    <script>
+        const paymentLinks = {
+            monthly: "https://payments.cashfree.com/links?code=Iabkpsmso0j0_AAAAAAATdl0",
+            annual: "Https://payments.cashfree.com/links?code=Fabkq545dee0_AAAAAAATdl0"
         };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        let currentUserId = null;
-        let activePromo = null;
-        const originalPrices = { "price-monthly": 9.99, "price-annual": 89.99 };
-
-        onAuthStateChanged(auth, (u) => { if(u) currentUserId = u.uid; });
 
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -93,60 +67,11 @@
             setTimeout(() => t.classList.remove('show'), 4000);
         }
 
-        window.applyPromo = async () => {
-            const codeInput = document.getElementById('promoCode');
-            const code = codeInput.value.trim().toUpperCase();
-            document.getElementById('price-monthly').innerText = originalPrices["price-monthly"];
-            document.getElementById('price-annual').innerText = originalPrices["price-annual"];
-            if(!code) { activePromo = null; codeInput.style.borderColor = "transparent"; return; }
-            try {
-                const snap = await getDoc(doc(db, "promos", code));
-                if(snap.exists() && snap.data().status === "active") {
-                    const data = snap.data(); activePromo = code;
-                    if(data.discount) {
-                        const disc = parseFloat(data.discount) / 100;
-                        document.getElementById('price-monthly').innerText = (originalPrices["price-monthly"] * (1 - disc)).toFixed(2);
-                        document.getElementById('price-annual').innerText = (originalPrices["price-annual"] * (1 - disc)).toFixed(2);
-                    }
-                    showToast(`Code ${code} Applied! ✅`);
-                    codeInput.style.borderColor = "#10b981";
-                } else {
-                    activePromo = null; codeInput.style.borderColor = "#ef4444"; showToast("Invalid or Expired Code!");
-                }
-            } catch(e) { console.error(e); showToast("Rules Error!"); }
-        };
-
-        window.startPayment = async (priceId, planType) => {
-            if(!currentUserId) return showToast("Please login first!");
-
-            // UI se discounted price fetch kar rahe hain
-            const finalPrice = document.getElementById(priceId).innerText;
-            showToast(`Initializing ${planType} Subscription for $${finalPrice}...`);
-
-            try {
-                // Dynamic order request to backend API
-                const response = await fetch('/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: currentUserId,
-                        amount: finalPrice,
-                        plan: planType // 'monthly' ya 'annual' pass ho raha hai
-                    })
-                });
-
-                const session = await response.json();
-
-                if (session.payment_link) {
-                    // Redirecting to dynamic Cashfree link with correct amount and ID
-                    window.location.href = session.payment_link;
-                } else {
-                    showToast("Error creating payment link. Try again.");
-                }
-            } catch (error) {
-                console.error("Payment Link Error:", error);
-                showToast("Connection Error! Check your internet.");
-            }
+        window.redirectToPayment = (plan) => {
+            showToast(`Redirecting to ${plan} payment...`);
+            setTimeout(() => {
+                window.location.href = paymentLinks[plan];
+            }, 1000);
         };
     </script>
 </body>
