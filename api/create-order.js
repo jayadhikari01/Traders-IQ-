@@ -1,27 +1,20 @@
-import axios from 'axios'; // Require ki jagah Import use karein
+const axios = require('axios'); // Is baar Require hi rehne dete hain par niche syntax thoda badal diya hai
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
     const { userId, amount, plan } = req.body;
-
-    // Security: Check if data exists
-    if (!userId || !amount) {
-        return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const expiryDays = (plan && plan.toLowerCase() === 'monthly') ? 30 : 365;
 
     try {
         const response = await axios.post('https://api.cashfree.com/pg/links', {
             customer_details: {
-                customer_id: userId,
+                customer_id: userId || "Guest_User",
                 customer_phone: "9999999999", 
             },
             link_id: `link_${Date.now()}`,
-            link_amount: parseFloat(amount), // Ensure amount is a number
+            link_amount: parseFloat(amount),
             link_currency: "INR",
-            link_purpose: `Traders IQ ${plan} Access`,
+            link_purpose: `Traders IQ ${plan || 'Pro'} Access`,
             link_meta: {
                 return_url: `https://tradersiq.xyz/success.html?order_id={order_id}`,
             }
@@ -29,17 +22,17 @@ export default async function handler(req, res) {
             headers: {
                 'x-client-id': process.env.CASHFREE_APP_ID,
                 'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-                'x-api-version': '2023-08-01' // Keep this or use 2025-01-01 to match webhook
+                'x-api-version': '2023-08-01'
             }
         });
 
-        res.status(200).json(response.data);
+        return res.status(200).json(response.data);
     } catch (error) {
-        // Detailed logging for Vercel
-        console.error("Cashfree API Error Details:", error.response ? error.response.data : error.message);
-        res.status(500).json({ 
-            error: "Failed to create link", 
-            details: error.response ? error.response.data.message : error.message 
+        // Ye line aapko Vercel Logs mein exact error batayegi
+        console.error("CASHFREE ERROR:", error.response ? error.response.data : error.message);
+        return res.status(500).json({ 
+            error: "Order creation failed", 
+            message: error.response ? error.response.data.message : error.message 
         });
     }
 }
