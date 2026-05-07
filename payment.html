@@ -36,7 +36,7 @@
                 <li>100+ Performance Badges</li>
                 <li>Profit Target Tracker</li>
             </ul>
-            <button onclick="startPayment('price-monthly', 'monthly')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
+            <button onclick="startPayment('monthly')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Monthly</button>
         </div>
 
         <div class="bento-card p-10 flex flex-col border-indigo-200 shadow-2xl relative overflow-hidden">
@@ -51,20 +51,12 @@
                 <li>Exclusive Legend Badges</li>
                 <li>Priority Strategy Support</li>
             </ul>
-            <button onclick="startPayment('price-annual', 'annual')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
-        </div>
-    </div>
-
-    <div class="max-w-md mx-auto">
-        <div class="bento-card p-8 border-dashed border-2 bg-white flex flex-col items-center">
-            <input type="text" id="promoCode" placeholder="PROMO CODE" class="w-full bg-slate-100 p-4 rounded-xl text-sm font-bold text-center mb-4 outline-none border-2 border-transparent focus:border-indigo-400 transition-all">
-            <button onclick="applyPromo()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] uppercase">Apply Promo Code</button>
+            <button onclick="startPayment('annual')" class="btn-premium w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest">Activate Annual</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -77,13 +69,9 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
 
         let currentUserId = null;
-        let activePromo = null;
-        const originalPrices = { "price-monthly": 9.99, "price-annual": 89.99 };
-
         onAuthStateChanged(auth, (u) => { if(u) currentUserId = u.uid; });
 
         function showToast(msg) {
@@ -93,60 +81,20 @@
             setTimeout(() => t.classList.remove('show'), 4000);
         }
 
-        window.applyPromo = async () => {
-            const codeInput = document.getElementById('promoCode');
-            const code = codeInput.value.trim().toUpperCase();
-            document.getElementById('price-monthly').innerText = originalPrices["price-monthly"];
-            document.getElementById('price-annual').innerText = originalPrices["price-annual"];
-            if(!code) { activePromo = null; codeInput.style.borderColor = "transparent"; return; }
-            try {
-                const snap = await getDoc(doc(db, "promos", code));
-                if(snap.exists() && snap.data().status === "active") {
-                    const data = snap.data(); activePromo = code;
-                    if(data.discount) {
-                        const disc = parseFloat(data.discount) / 100;
-                        document.getElementById('price-monthly').innerText = (originalPrices["price-monthly"] * (1 - disc)).toFixed(2);
-                        document.getElementById('price-annual').innerText = (originalPrices["price-annual"] * (1 - disc)).toFixed(2);
-                    }
-                    showToast(`Code ${code} Applied! ✅`);
-                    codeInput.style.borderColor = "#10b981";
-                } else {
-                    activePromo = null; codeInput.style.borderColor = "#ef4444"; showToast("Invalid or Expired Code!");
-                }
-            } catch(e) { console.error(e); showToast("Rules Error!"); }
-        };
-
-        window.startPayment = async (priceId, planType) => {
+        window.startPayment = (planType) => {
             if(!currentUserId) return showToast("Please login first!");
 
-            // UI se discounted price fetch kar rahe hain
-            const finalPrice = document.getElementById(priceId).innerText;
-            showToast(`Initializing ${planType} Subscription for $${finalPrice}...`);
+            const links = {
+                'monthly': 'https://payments.cashfree.com/links?code=Zabs323e6q6g_AAAAAAATdl0',
+                'annual': 'https://payments.cashfree.com/links?code=qabs3b4o8q6g_AAAAAAATdl0'
+            };
 
-            try {
-                // Dynamic order request to backend API
-                const response = await fetch('/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: currentUserId,
-                        amount: finalPrice,
-                        plan: planType // 'monthly' ya 'annual' pass ho raha hai
-                    })
-                });
-
-                const session = await response.json();
-
-                if (session.payment_link) {
-                    // Redirecting to dynamic Cashfree link with correct amount and ID
-                    window.location.href = session.payment_link;
-                } else {
-                    showToast("Error creating payment link. Try again.");
-                }
-            } catch (error) {
-                console.error("Payment Link Error:", error);
-                showToast("Connection Error! Check your internet.");
-            }
+            showToast(`Redirecting to ${planType} Checkout...`);
+            
+            // Redirecting directly to the Cashfree links provided
+            setTimeout(() => {
+                window.location.href = links[planType];
+            }, 1000);
         };
     </script>
 </body>
