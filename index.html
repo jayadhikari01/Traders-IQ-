@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <title>Traders IQ | The Elite Terminal</title>
+    <link class="js-instamojo-script" href="https://js.instamojo.com/v1/checkout.js"></link>
     <link rel="icon" href="favicon.png" type="image/png">
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -227,6 +227,12 @@
                 </div>
             </div>
             <div class="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="max-w-4xl text-center border-b border-white/5 pb-6 mb-2">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mb-2">⚠️ Financial Risk Disclosure</p>
+                    <p class="text-slate-400 text-[11px] font-medium leading-relaxed max-w-3xl mx-auto">
+                        Traders IQ is strictly a digital data analytics and journaling tool designed for self-tracking, educational purposes, and performance record-keeping. We are not registered financial advisors, and we do not provide financial investment advice, market recommendations, or trading signals of any kind. Trading financial instruments involves substantial risk of capital loss. All users are solely responsible for their own capital and execution choices.
+                    </p>
+                </div>
                 <p class="text-slate-500 text-[10px] font-black tracking-[0.4em] uppercase">© 2026 TRADERS IQ • THE GOLD STANDARD</p>
             </div>
         </div>
@@ -252,9 +258,18 @@
         const auth = getAuth(app);
         const analytics = getAnalytics(app);
 
-        // Initialize Cashfree
-        const cashfree = Cashfree({
-            mode: "sandbox" // Change to "production" once approved
+        // Instamojo Checkout Setup Configuration
+        Instamojo.configure({
+            handlers: {
+                onOpen: function() {},
+                onClose: function() {},
+                onSuccess: function(response) {
+                    console.log("Payment Success Response:", response);
+                },
+                onFailure: function(response) {
+                    console.log("Payment Failure Response:", response);
+                }
+            }
         });
 
         // User login check
@@ -265,5 +280,5 @@
         });
     </script>
 </body>
-                        </html>
-    
+    </html>
+                    
