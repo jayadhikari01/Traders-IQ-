@@ -64,7 +64,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js" /* custom fallback */;
+        import { getFirestore as firestoreGet, doc as docRef, getDoc as fetchDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -77,7 +78,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = firestoreGet(app);
         const auth = getAuth(app);
 
         let currentUserId = null;
@@ -100,7 +101,7 @@
             document.getElementById('price-annual').innerText = originalPrices["price-annual"];
             if(!code) { activePromo = null; codeInput.style.borderColor = "transparent"; return; }
             try {
-                const snap = await getDoc(doc(db, "promos", code));
+                const snap = await fetchDoc(docRef(db, "promos", code));
                 if(snap.exists() && snap.data().status === "active") {
                     const data = snap.data(); activePromo = code;
                     if(data.discount) {
@@ -120,13 +121,47 @@
             if(!currentUserId) return showToast("Please login first!");
 
             const finalPrice = document.getElementById(priceId).innerText;
-            showToast(`Initializing ${planType} Subscription for $${finalPrice}...`);
+            
+            // AGAR 100% OFF HAI (PRICE IS 0.00)
+            if (parseFloat(finalPrice) === 0.00) {
+                showToast("Processing 100% Free Promo Access...");
+                try {
+                    // Plan type check karke absolute exact expiry date calculate karna
+                    const now = new Date();
+                    const expiryDate = new Date();
+                    
+                    if (planType === 'annual') {
+                        expiryDate.setDate(now.getDate() + 365); // Pure 1 saal ka exact access
+                    } else {
+                        expiryDate.setDate(now.getDate() + 30);  // Pure 1 mahine ka exact access
+                    }
 
-            // Check if plan is monthly or annual, and redirect with custom_id attached
+                    // Firestore document update static fields aur precise validUntil timestamp ke saath
+                    await setDoc(docRef(db, 'users', currentUserId), {
+                        isPro: true,
+                        status: "active",
+                        plan: planType === 'annual' ? 'Annual Elite (Free)' : 'Monthly Pro (Free)',
+                        validUntil: expiryDate, // Expiry date set kar di taaki dashboard automatic check block kar sake
+                        updatedAt: now
+                    }, { merge: true });
+                    
+                    showToast("Access Granted Automatically! Redirecting...");
+                    setTimeout(() => {
+                        window.location.href = "https://tradersiq.xyz/dashboard.html?status=success";
+                    }, 2000);
+                } catch (fsError) {
+                    console.error("Firestore Free Activation Error:", fsError);
+                    showToast("Activation Error! Please contact support.");
+                }
+                return; 
+            }
+
+            // AGAR PAID HAI, TOH PAYPAL PAR BHEJO (Original Link Handling)
+            showToast(`Initializing ${planType} Subscription for $${finalPrice}...`);
             if (planType === 'monthly') {
-                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-24N10899NV367014XNIMWCYI&custom_id=" + currentUserId;
+                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-24N10899NV367014XNIMWCYI&custom_id=" + currentUserId; //
             } else if (planType === 'annual') {
-                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5TB70082U49301520NIMWI4A&custom_id=" + currentUserId;
+                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5TB70082U49301520NIMWI4A&custom_id=" + currentUserId; //
             }
         };
     </script>
