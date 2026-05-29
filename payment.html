@@ -122,11 +122,11 @@
             const finalPrice = document.getElementById(priceId).innerText;
             showToast(`Initializing ${planType} Subscription for $${finalPrice}...`);
 
-            // Plan type check karke sahi PayPal billing link par redirect karega
+            // Check if plan is monthly or annual, and redirect with custom_id attached
             if (planType === 'monthly') {
-                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-24N10899NV367014XNIMWCYI";
+                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-24N10899NV367014XNIMWCYI&custom_id=" + currentUserId;
             } else if (planType === 'annual') {
-                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5TB70082U49301520NIMWI4A";
+                window.location.href = "https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5TB70082U49301520NIMWI4A&custom_id=" + currentUserId;
             }
         };
     </script>
