@@ -27,78 +27,84 @@ export default async function handler(req, res) {
 
         console.log("PayPal Webhook Received Event:", event.event_type);
 
-        // PayPal data extraction
-        const resource = event.resource;
-        const userId = resource.custom_id; 
-        const subscriptionId = resource.id;
-        const planId = resource.plan_id;
-
-        if (!userId) {
-            console.error("No Custom UserID found in PayPal event");
-            return res.status(200).send('Event received but no UserID found');
-        }
-
-        // 1. SUBSCRIPTION ACTIVATED OR PAYMENT SUCCESS
-        if (event.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED' || event.event_type === 'PAYMENT.SALE.COMPLETED') {
+        // 1. DYNAMIC PAYMENT SUCCESS (Orders V2 API Event)
+        if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
+            const resource = event.resource;
             
-            let planName = 'Basic Tier';
-            const expiryDate = new Date();
+            // Create Order wale code se jo custom_id pass kiya tha, use extract karna
+            const customIdRaw = resource.custom_id;
 
-            // 🎯 DONO PLAN IDs KO ALAG-ALAG CHECK KIYA HAI:
-            if (planId === 'P-5TB70082U49301520NIMWI4A') { 
-                // 1. ANNUAL PLAN (Annual Elite)
-                planName = 'Annual Elite';
-                expiryDate.setDate(expiryDate.getDate() + 366); // 1 Saal ka access (+366 Days)
-                
-            } else if (planId === 'P-24N10899NV367014XNIMWCYI') { 
-                // 2. MONTHLY PLAN (Monthly Pro)
-                planName = 'Monthly Pro';
-                expiryDate.setDate(expiryDate.getDate() + 31);  // 1 Mahine ka access (+31 Days)
-            } else {
-                // Agar koi default ya alag plan ho
-                planName = 'Monthly Pro';
-                expiryDate.setDate(expiryDate.getDate() + 31);
+            if (!customIdRaw) {
+                console.error("No Custom Data found in PayPal checkout event");
+                return res.status(200).send('Event received but no custom_id found');
             }
 
+            let userId = "";
+            let planName = "Monthly Pro"; // Default fallback plan
+
+            try {
+                // custom_id JSON format mein hoga string hoke
+                const customData = JSON.parse(customIdRaw);
+                userId = customData.userId;
+                planName = customData.plan; // 'Annual Elite' ya 'Monthly Pro'
+            } catch (e) {
+                // Agar bina JSON ke direct sirf UserId aayi ho (Backup safety)
+                userId = customIdRaw;
+                planName = "Monthly Pro";
+            }
+
+            if (!userId) {
+                console.error("No UserID found in custom data");
+                return res.status(200).send('No UserID found');
+            }
+
+            // 📅 Expiry Date Calculation (User ke checkout plan selection ke mutabik)
+            const expiryDate = new Date();
+            if (planName === 'Annual Elite') {
+                expiryDate.setDate(expiryDate.getDate() + 366); // 1 Saal ka access (+366 Days)
+            } else {
+                expiryDate.setDate(expiryDate.getDate() + 31);  // 1 Mahine ka access (+31 Days)
+            }
+
+            // Database mein status update karna aur active access dena
             await db.collection('users').doc(userId).set({
                 isPro: true,
                 status: "active",
                 plan: planName,
-                subscriptionId: subscriptionId,
-                validUntil: admin.firestore.Timestamp.fromDate(expiryDate), // Dashboard verification ke liye
+                validUntil: admin.firestore.Timestamp.fromDate(expiryDate), // Dashboard validation sync
                 updatedAt: admin.firestore.FieldValue.serverTimestamp() 
             }, { merge: true }); 
 
-            console.log(`Success: User ${userId} upgraded to ${planName}. Expires on: ${expiryDate}`);
+            console.log(`Success: User ${userId} upgraded to ${planName} via Discounted Checkout. Expires on: ${expiryDate}`);
             return res.status(200).send('User Activated');
         }
 
-        // 2. SUBSCRIPTION CANCELLED OR EXPIRED
-        if (event.event_type === 'BILLING.SUBSCRIPTION.CANCELLED' || event.event_type === 'BILLING.SUBSCRIPTION.EXPIRED') {
-            await db.collection('users').doc(userId).update({
-                isPro: false,
-                status: "inactive",
-                reason: event.event_type === 'BILLING.SUBSCRIPTION.EXPIRED' ? "Expired" : "Cancelled",
-                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // Turant access block karne ke liye
-                updatedAt: admin.firestore.FieldValue.serverTimestamp() 
-            });
+        // 2. DYNAMIC DISPUTE / REVERSED LOGIC (Agar user refund leta hai ya payment fail hoti hai)
+        if (event.event_type === 'PAYMENT.CAPTURE.REVERSED' || event.event_type === 'PAYMENT.CAPTURE.DENIED') {
+            const resource = event.resource;
+            const customIdRaw = resource.custom_id;
 
-            console.log(`Ended: User ${userId} subscription status set to inactive (${event.event_type})`);
-            return res.status(200).send('User Deactivated');
-        }
+            if (customIdRaw) {
+                let userId = "";
+                try {
+                    const customData = JSON.parse(customIdRaw);
+                    userId = customData.userId;
+                } catch(e) {
+                    userId = customIdRaw;
+                }
 
-        // 3. PAYMENT FAILED LOGIC
-        if (event.event_type === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED') {
-            await db.collection('users').doc(userId).update({
-                isPro: false, 
-                status: "inactive", 
-                lastError: "Subscription Payment Failed / Card Declined", 
-                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // Payment fail hote hi lock
-                updatedAt: admin.firestore.FieldValue.serverTimestamp() 
-            });
-
-            console.log(`Failed: User ${userId} subscription payment failed`);
-            return res.status(200).send('Payment Failure Handled');
+                if (userId) {
+                    await db.collection('users').doc(userId).update({
+                        isPro: false,
+                        status: "inactive",
+                        reason: "Payment Reversed or Denied",
+                        validUntil: admin.firestore.Timestamp.fromDate(new Date()), // Access immediately end
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp() 
+                    });
+                    console.log(`Ended: User ${userId} access blocked due to Payment Reversal.`);
+                }
+            }
+            return res.status(200).send('Reversal Handled');
         }
 
         return res.status(200).send('Event Handled'); 
@@ -111,4 +117,4 @@ export default async function handler(req, res) {
 
 // Body parser must be false for raw data stream
 export const config = { api: { bodyParser: false } };
-        
+                                                         
