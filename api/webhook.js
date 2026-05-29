@@ -14,15 +14,15 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed'); //
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed'); 
 
     try {
         // Raw body capture for consistency
         const chunks = [];
         for await (const chunk of req) {
-            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk); //
+            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk); 
         }
-        const rawBody = Buffer.concat(chunks); //
+        const rawBody = Buffer.concat(chunks); 
         const event = JSON.parse(rawBody.toString());
 
         console.log("PayPal Webhook Received Event:", event.event_type);
@@ -40,17 +40,27 @@ export default async function handler(req, res) {
 
         // 1. SUBSCRIPTION ACTIVATED OR PAYMENT SUCCESS
         if (event.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED' || event.event_type === 'PAYMENT.SALE.COMPLETED') {
-            const planName = planId === 'P-5TB70082U49301520NIMWI4A' ? 'Annual Elite' : 'Monthly Pro';
+            const isAnnual = planId === 'P-5TB70082U49301520NIMWI4A';
+            const planName = isAnnual ? 'Annual Elite' : 'Monthly Pro';
+
+            // 📅 Expiry Date Calculate Karna (Monthly ke liye +31 days, Annual ke liye +366 days)
+            const expiryDate = new Date();
+            if (isAnnual) {
+                expiryDate.setDate(expiryDate.getDate() + 366);
+            } else {
+                expiryDate.setDate(expiryDate.getDate() + 31);
+            }
 
             await db.collection('users').doc(userId).set({
                 isPro: true,
                 status: "active",
                 plan: planName,
                 subscriptionId: subscriptionId,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp() //
-            }, { merge: true }); //
+                validUntil: admin.firestore.Timestamp.fromDate(expiryDate), // 👈 Dashboard dynamic expiry check ke liye add kiya
+                updatedAt: admin.firestore.FieldValue.serverTimestamp() 
+            }, { merge: true }); 
 
-            console.log(`Success: User ${userId} upgraded via PayPal Subscription`);
+            console.log(`Success: User ${userId} upgraded via PayPal Subscription. Valid Until: ${expiryDate}`);
             return res.status(200).send('User Activated');
         }
 
@@ -60,7 +70,8 @@ export default async function handler(req, res) {
                 isPro: false,
                 status: "inactive",
                 reason: event.event_type === 'BILLING.SUBSCRIPTION.EXPIRED' ? "Expired" : "Cancelled",
-                updatedAt: admin.firestore.FieldValue.serverTimestamp() //
+                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // 👈 Turant expire karne ke liye current time set kar diya
+                updatedAt: admin.firestore.FieldValue.serverTimestamp() 
             });
 
             console.log(`Ended: User ${userId} subscription status set to inactive (${event.event_type})`);
@@ -70,23 +81,24 @@ export default async function handler(req, res) {
         // 3. PAYMENT FAILED LOGIC (Subscription Payment Fail/Decline Hone Par)
         if (event.event_type === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED') {
             await db.collection('users').doc(userId).update({
-                isPro: false, // Access block karne ke liye false kiya hai
-                status: "inactive", //
-                lastError: "Subscription Payment Failed / Card Declined", //
-                updatedAt: admin.firestore.FieldValue.serverTimestamp() //
+                isPro: false, 
+                status: "inactive", 
+                lastError: "Subscription Payment Failed / Card Declined", 
+                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // 👈 Payment fail hote hi access stop karne ke liye expire kiya
+                updatedAt: admin.firestore.FieldValue.serverTimestamp() 
             });
 
             console.log(`Failed: User ${userId} subscription payment failed`);
             return res.status(200).send('Payment Failure Handled');
         }
 
-        return res.status(200).send('Event Handled'); //
+        return res.status(200).send('Event Handled'); 
 
     } catch (error) {
-        console.error('PayPal Webhook Error:', error.message); //
+        console.error('PayPal Webhook Error:', error.message); 
         return res.status(500).send('Internal Server Error');
     }
 }
 
 // Body parser must be false for raw data stream
-export const config = { api: { bodyParser: false } }; //
+export const config = { api: { bodyParser: false } };
