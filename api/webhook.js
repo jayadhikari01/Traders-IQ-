@@ -40,14 +40,23 @@ export default async function handler(req, res) {
 
         // 1. SUBSCRIPTION ACTIVATED OR PAYMENT SUCCESS
         if (event.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED' || event.event_type === 'PAYMENT.SALE.COMPLETED') {
-            const isAnnual = planId === 'P-5TB70082U49301520NIMWI4A';
-            const planName = isAnnual ? 'Annual Elite' : 'Monthly Pro';
-
-            // 📅 Expiry Date Calculate Karna (Monthly ke liye +31 days, Annual ke liye +366 days)
+            
+            let planName = 'Basic Tier';
             const expiryDate = new Date();
-            if (isAnnual) {
-                expiryDate.setDate(expiryDate.getDate() + 366);
+
+            // 🎯 DONO PLAN IDs KO ALAG-ALAG CHECK KIYA HAI:
+            if (planId === 'P-5TB70082U49301520NIMWI4A') { 
+                // 1. ANNUAL PLAN (Annual Elite)
+                planName = 'Annual Elite';
+                expiryDate.setDate(expiryDate.getDate() + 366); // 1 Saal ka access (+366 Days)
+                
+            } else if (planId === 'P-24N10899NV367014XNIMWCYI') { 
+                // 2. MONTHLY PLAN (Monthly Pro)
+                planName = 'Monthly Pro';
+                expiryDate.setDate(expiryDate.getDate() + 31);  // 1 Mahine ka access (+31 Days)
             } else {
+                // Agar koi default ya alag plan ho
+                planName = 'Monthly Pro';
                 expiryDate.setDate(expiryDate.getDate() + 31);
             }
 
@@ -56,21 +65,21 @@ export default async function handler(req, res) {
                 status: "active",
                 plan: planName,
                 subscriptionId: subscriptionId,
-                validUntil: admin.firestore.Timestamp.fromDate(expiryDate), // 👈 Dashboard dynamic expiry check ke liye add kiya
+                validUntil: admin.firestore.Timestamp.fromDate(expiryDate), // Dashboard verification ke liye
                 updatedAt: admin.firestore.FieldValue.serverTimestamp() 
             }, { merge: true }); 
 
-            console.log(`Success: User ${userId} upgraded via PayPal Subscription. Valid Until: ${expiryDate}`);
+            console.log(`Success: User ${userId} upgraded to ${planName}. Expires on: ${expiryDate}`);
             return res.status(200).send('User Activated');
         }
 
-        // 2. SUBSCRIPTION CANCELLED OR EXPIRED (Access Hatane Ke Liye)
+        // 2. SUBSCRIPTION CANCELLED OR EXPIRED
         if (event.event_type === 'BILLING.SUBSCRIPTION.CANCELLED' || event.event_type === 'BILLING.SUBSCRIPTION.EXPIRED') {
             await db.collection('users').doc(userId).update({
                 isPro: false,
                 status: "inactive",
                 reason: event.event_type === 'BILLING.SUBSCRIPTION.EXPIRED' ? "Expired" : "Cancelled",
-                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // 👈 Turant expire karne ke liye current time set kar diya
+                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // Turant access block karne ke liye
                 updatedAt: admin.firestore.FieldValue.serverTimestamp() 
             });
 
@@ -78,13 +87,13 @@ export default async function handler(req, res) {
             return res.status(200).send('User Deactivated');
         }
 
-        // 3. PAYMENT FAILED LOGIC (Subscription Payment Fail/Decline Hone Par)
+        // 3. PAYMENT FAILED LOGIC
         if (event.event_type === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED') {
             await db.collection('users').doc(userId).update({
                 isPro: false, 
                 status: "inactive", 
                 lastError: "Subscription Payment Failed / Card Declined", 
-                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // 👈 Payment fail hote hi access stop karne ke liye expire kiya
+                validUntil: admin.firestore.Timestamp.fromDate(new Date()), // Payment fail hote hi lock
                 updatedAt: admin.firestore.FieldValue.serverTimestamp() 
             });
 
@@ -102,3 +111,4 @@ export default async function handler(req, res) {
 
 // Body parser must be false for raw data stream
 export const config = { api: { bodyParser: false } };
+        
