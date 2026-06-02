@@ -39,7 +39,7 @@ app.get('/api/get-users', async (req, res) => {
         const users = {};
         snapshot.forEach(doc => {
             const userData = doc.data();
-            // Filter: Sirf wo users dikhayega jo delete nahi huye hain
+            // FIX: Agar user 'deleted' hai, toh usse include mat karo
             if (!userData.deleted) {
                 users[doc.id] = userData;
             }
@@ -85,4 +85,3 @@ app.get('/api/get-promos', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  
