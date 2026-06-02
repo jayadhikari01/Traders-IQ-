@@ -172,7 +172,6 @@
         });
 
         function fetchUserDataFromVPS() {
-            // Timestamp add kiya hai taaki cache na ho
             fetch(`${BACKEND_API_URL}/get-users?t=${new Date().getTime()}`)
             .then(res => res.json())
             .then(data => {
@@ -223,9 +222,7 @@
             Object.keys(users).forEach(userId => {
                 const user = users[userId];
                 
-                // Sirf valid data dikhaye (email jaruri hai)
-                if (!user || !user.email) return;
-
+                // Relaxed check: Agar email missing hai tab bhi show karo, taaki naya user miss na ho
                 const promoUsed = (user.referred_by || "DIRECT").toUpperCase();
                 const filterVal = filterCode.toUpperCase();
                 
@@ -251,7 +248,7 @@
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-[#161B26] transition-colors">
-                        <td class="px-6 py-4"><div class="font-medium text-white">${user.email}</div><div class="text-xs text-gray-500">ID: ${userId}</div></td>
+                        <td class="px-6 py-4"><div class="font-medium text-white">${user.email || "No Email Provided"}</div><div class="text-xs text-gray-500">ID: ${userId}</div></td>
                         <td class="px-6 py-4 font-mono text-xs font-semibold ${promoUsed !== 'DIRECT' ? 'text-yellow-400' : 'text-gray-500'}">${promoUsed}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
                         <td class="px-6 py-4 text-gray-400 font-medium">${daysDisplay}</td>
@@ -292,5 +289,4 @@
         }
     </script>
 </body>
-    </html>
-    
+</html>
