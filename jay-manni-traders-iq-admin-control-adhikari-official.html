@@ -10,7 +10,7 @@
 </head>
 <body class="bg-[#0B0E14] text-gray-200 font-sans antialiased text-sm">
 
-    <div id="loadingGate" class="fixed inset-0 bg-[#0B0E14] flex flex-col justify-center items-center z-50 transition-all duration-500">
+    <div id="loadingGate" class="fixed inset-0 bg-[#0B0E14] flex flex-col justify-center items-center z-50">
         <div class="w-10 h-10 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin mb-4"></div>
         <p class="text-sm font-medium text-gray-400 tracking-wide">Securing Session Connection...</p>
     </div>
@@ -84,10 +84,10 @@
     </div>
 
     <script>
-        // 🚨 ADJUST THIS: Apne VPS Server ka exact URL ya IP Port yahan daalein
-        const BACKEND_API_URL = "http://YOUR_VPS_IP_OR_DOMAIN:3000/api";
+        // 🚨 ADJUST THIS: Apne VPS Server ka IP aur Port yahan sahi se daalein
+        const BACKEND_API_URL = "http://YOUR_VPS_IP_ADDRESS:3000/api";
 
-        // Firebase Initialization (Sirf session reading ke liye public credentials)
+        // Firebase Credentials (Normal Public Configuration)
         const firebaseConfig = {
             apiKey: "YOUR_PUBLIC_FIREBASE_API_KEY",
             authDomain: "YOUR_PUBLIC_FIREBASE_AUTH_DOMAIN"
@@ -100,34 +100,35 @@
         // 🔒 MOBILE DELAY SECURE GATEWAY
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // Front-end ab faisla nahi karega, wo direct VPS Backend se poochega
+                // Front-end hits VPS for verification
                 fetch(`${BACKEND_API_URL}/verify-admin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ loggedInUid: user.uid })
                 })
-                .then(res => {
-                    if (!res.ok) throw new Error("Unauthorized");
-                    return res.json();
-                })
+                .then(res => res.json())
                 .then(data => {
                     if (data.authorized) {
-                        // Verification Success -> Gate hatao aur dashboard dikhao
                         document.getElementById('loadingGate').classList.add('hidden');
                         document.getElementById('adminPage').classList.remove('hidden');
                         fetchUserDataFromVPS();
                     } else {
+                        alert("❌ VPS Denied Access: " + data.message);
                         triggerKickout();
                     }
                 })
-                .catch(() => triggerKickout());
+                .catch((err) => {
+                    alert("❌ Network Error: Cannot connect to VPS Server! Details: " + err.message);
+                    triggerKickout();
+                });
             } else {
-                // Phone delay adjustment: Agar instantaneous token na mile toh 2.5 second wait karo
+                // Mobile state backup wait
                 setTimeout(() => {
                     if (!auth.currentUser) {
+                        alert("❌ No login session detected. Please login first!");
                         triggerKickout();
                     }
-                }, 2500);
+                }, 3000);
             }
         });
 
@@ -135,7 +136,6 @@
             window.location.href = "index.html";
         }
 
-        // 📊 FETCH DATA FROM VPS
         function fetchUserDataFromVPS() {
             fetch(`${BACKEND_API_URL}/get-users`)
             .then(res => res.json())
@@ -146,7 +146,6 @@
             });
         }
 
-        // 🆕 CREATE PROMO CODE VIA VPS
         function createNewPromoCode() {
             const name = document.getElementById('newCodeName').value.trim().toUpperCase();
             const discount = document.getElementById('newCodeDiscount').value;
@@ -165,18 +164,17 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    alert(`Promo Code ${name} generated successfully!`);
+                    alert(`Promo Code ${name} generated!`);
                     document.getElementById('newCodeName').value = "";
                     document.getElementById('newCodeDiscount').value = "";
                     document.getElementById('newCodeOwner').value = "";
                     fetchUserDataFromVPS();
                 } else {
-                    alert("Failed to save: " + data.message);
+                    alert("Failed: " + data.message);
                 }
             });
         }
 
-        // FETCH ACTIVE CODES FOR FILTER DROPDOWN
         function fetchPromoCodesFromVPS() {
             fetch(`${BACKEND_API_URL}/get-promos`)
             .then(res => res.json())
@@ -192,7 +190,6 @@
             });
         }
 
-        // RENDER LIVE INTERFACE TABLE (Supports Plan Types Tracker)
         function renderTable(users, filterCode = "all") {
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = "";
@@ -212,7 +209,6 @@
                     const differenceInTime = currentDate.getTime() - payDate.getTime();
                     const differenceInDays = Math.floor(differenceInTime / (1000 * 3600 * 24));
                     
-                    // Tracking Monthly vs Annual dynamically
                     const planType = user.plan_type ? user.plan_type.toUpperCase() : "MONTHLY";
                     daysDisplay = `${differenceInDays} Days Active (${planType})`;
                 } else if (user.plan === "free_access") {
@@ -253,7 +249,6 @@
             document.getElementById('userCount').innerText = count;
         }
 
-        // UPDATE STATUS HANDLER VIA VPS
         function updateUserStatus(userId, newPlan) {
             fetch(`${BACKEND_API_URL}/update-user`, {
                 method: 'POST',
@@ -263,10 +258,10 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    alert("User Access State Modified!");
+                    alert("User State Updated!");
                     fetchUserDataFromVPS();
                 } else {
-                    alert("Modification failed: " + data.message);
+                    alert("Failed: " + data.message);
                 }
             });
         }
