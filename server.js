@@ -29,7 +29,7 @@ app.post('/api/verify-admin', async (req, res) => {
     if (MASTER_ADMIN_UID && loggedInUid === MASTER_ADMIN_UID) {
         res.json({ authorized: true });
     } else {
-        res.status(403).json({ authorized: false, message: "Unauthorized access! Only the Master Admin is allowed." });
+        res.status(403).json({ authorized: false, message: "Unauthorized access!" });
     }
 });
 
@@ -39,8 +39,8 @@ app.get('/api/get-users', async (req, res) => {
         const users = {};
         snapshot.forEach(doc => {
             const userData = doc.data();
-            // FIX: Agar user 'deleted' hai, toh usse include mat karo
-            if (!userData.deleted) {
+            // FIX: Agar user ka deleted status 'true' nahi hai, toh hi bhejo
+            if (userData.deleted !== true) {
                 users[doc.id] = userData;
             }
         });
@@ -85,3 +85,4 @@ app.get('/api/get-promos', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+                                             
