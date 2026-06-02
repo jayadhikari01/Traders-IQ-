@@ -3,7 +3,7 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const app = express();
 
-app.use(cors()); // Ye zaroori hai taaki terminal.html tumhare server se baat kar sake
+app.use(cors());
 app.use(express.json());
 
 // Firebase Initialization
@@ -17,41 +17,63 @@ const serviceAccount = {
 };
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
+  credential: admin.credential.cert(serviceAccount)
 });
 
-const db = admin.database();
+const db = admin.firestore(); // Realtime DB ki jagah Firestore use ho raha hai
 
-// API Routes
+// API Routes (Updated for Firestore)
 app.post('/api/verify-admin', async (req, res) => {
-    const { loggedInUid } = req.body;
-    // Yahan tum apna admin UID check kar sakte ho
+    // Yahan tum basic verification kar sakte ho
     res.json({ authorized: true });
 });
 
 app.get('/api/get-users', async (req, res) => {
-    const snapshot = await db.ref('users').once('value');
-    res.json(snapshot.val() || {});
+    try {
+        const snapshot = await db.collection('users').get();
+        const users = {};
+        snapshot.forEach(doc => {
+            users[doc.id] = doc.data();
+        });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
 });
 
 app.post('/api/create-promo', async (req, res) => {
     const { name, discount, owner } = req.body;
-    await db.ref('promos/' + name).set({ discount, owner });
-    res.json({ success: true });
+    try {
+        await db.collection('promos').doc(name).set({ discount, owner, status: "active" });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 });
 
 app.post('/api/update-user', async (req, res) => {
     const { userId, newPlan } = req.body;
-    await db.ref('users/' + userId).update({ plan: newPlan });
-    res.json({ success: true });
+    try {
+        await db.collection('users').doc(userId).update({ plan: newPlan });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 });
 
 app.get('/api/get-promos', async (req, res) => {
-    const snapshot = await db.ref('promos').once('value');
-    res.json(snapshot.val() || {});
+    try {
+        const snapshot = await db.collection('promos').get();
+        const promos = {};
+        snapshot.forEach(doc => {
+            promos[doc.id] = doc.data();
+        });
+        res.json(promos);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch promos" });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-      
+          
