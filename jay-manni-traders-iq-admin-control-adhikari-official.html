@@ -10,9 +10,43 @@
 </head>
 <body class="bg-[#0B0E14] text-gray-200 font-sans antialiased text-sm">
 
-    <div id="loadingGate" class="fixed inset-0 bg-[#0B0E14] flex flex-col justify-center items-center z-50">
-        <div class="w-10 h-10 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin mb-4"></div>
-        <p class="text-sm font-medium text-gray-400 tracking-wide">Securing Session Connection...</p>
+    <div id="loginSection" class="fixed inset-0 bg-[#0B0E14] flex flex-col justify-center items-center z-50 px-4">
+        <div class="bg-[#121620] p-8 rounded-2xl border border-gray-800 shadow-2xl w-full max-w-md space-y-6">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-white tracking-wide">Traders IQ Terminal</h2>
+                <p class="text-xs text-gray-400 mt-1">Master Admin Secure Access Gateway</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Admin Email</label>
+                    <input type="email" id="adminEmail" placeholder="admin@tradersiq.xyz" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-3 focus:outline-none focus:border-yellow-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Secret Password</label>
+                    <input type="password" id="adminPassword" placeholder="••••••••" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-3 focus:outline-none focus:border-yellow-500">
+                </div>
+                <button onclick="handleAdminLogin()" id="loginBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-3 rounded-lg text-sm transition-all cursor-pointer shadow-lg shadow-yellow-500/10 flex justify-center items-center">
+                    Authorize & Enter
+                </button>
+            </div>
+
+            <div class="relative flex py-2 items-center">
+                <div class="flex-grow border-t border-gray-800"></div>
+                <span class="flex-shrink mx-4 text-gray-500 text-xs uppercase tracking-wider">OR</span>
+                <div class="flex-grow border-t border-gray-800"></div>
+            </div>
+
+            <button onclick="handleGoogleAdminLogin()" id="googleLoginBtn" class="w-full bg-white hover:bg-gray-100 text-slate-900 font-semibold py-3 rounded-lg text-sm transition-all cursor-pointer flex justify-center items-center gap-2 shadow-lg">
+                <svg class="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5.04c1.64 0 3.12.56 4.28 1.67l3.2-3.2C17.52 1.58 14.96 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.6 2.8C6.01 7.15 8.78 5.04 12 5.04z"/>
+                    <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.57l3.6 2.8c2.1-1.93 3.33-4.77 3.33-8.52z"/>
+                    <path fill="#FBBC05" d="M5.1 14.7c-.25-.76-.4-1.57-.4-2.4s.15-1.64.4-2.4L1.5 7.1C.55 9 .01 11.13.01 13.4s.54 4.4 1.49 6.3l3.6-2.8z"/>
+                    <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.6-2.8c-1.1.74-2.52 1.18-4.36 1.18-3.22 0-5.99-2.11-6.91-5.26l-3.6 2.8C3.4 20.35 7.35 23 12 23z"/>
+                </svg>
+                Sign in with Google
+            </button>
+        </div>
     </div>
 
     <div id="adminPage" class="hidden">
@@ -27,7 +61,6 @@
         </div>
 
         <div class="max-w-7xl mx-auto p-6 space-y-6">
-            
             <div class="bg-[#121620] p-6 rounded-2xl border border-gray-800 shadow-xl">
                 <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Create New Discount Promo Code
@@ -84,10 +117,10 @@
     </div>
 
     <script>
-        // 🚨 ADJUST THIS: Apne VPS Server ka IP aur Port yahan sahi se daalein
+        // 🚨 CONFIG: Apne VPS Server ka IP aur Port yahan sahi se daalein
         const BACKEND_API_URL = "http://YOUR_VPS_IP_ADDRESS:3000/api";
 
-        // Firebase Credentials (Normal Public Configuration)
+        // Firebase Client Config
         const firebaseConfig = {
             apiKey: "YOUR_PUBLIC_FIREBASE_API_KEY",
             authDomain: "YOUR_PUBLIC_FIREBASE_AUTH_DOMAIN"
@@ -97,10 +130,84 @@
 
         let allUsersData = {};
 
-        // 🔒 MOBILE DELAY SECURE GATEWAY
+        // 🚀 1. EMAIL/PASSWORD LOGIN HANDLER
+        function handleAdminLogin() {
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const btn = document.getElementById('loginBtn');
+
+            if (!email || !password) {
+                alert("Please fill both email and password!");
+                return;
+            }
+
+            btn.innerText = "Verifying Identity...";
+            btn.disabled = true;
+
+            auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                verifyWithVPS(userCredential.user.uid);
+            })
+            .catch((err) => {
+                alert("❌ Authentication Failed: " + err.message);
+                resetLoginBtn();
+            });
+        }
+
+        // 🚀 2. GOOGLE LOGIN HANDLER (NEW OPTION)
+        function handleGoogleAdminLogin() {
+            const googleBtn = document.getElementById('googleLoginBtn');
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            googleBtn.innerText = "Opening Google Sign-In...";
+            googleBtn.disabled = true;
+
+            // Mobile par signInWithPopup se behtar signInWithRedirect hota hai, par hum popup try karenge mobile fallback ke sath
+            auth.signInWithPopup(provider)
+            .then((result) => {
+                verifyWithVPS(result.user.uid);
+            })
+            .catch((err) => {
+                alert("❌ Google Login Failed: " + err.message);
+                googleBtn.innerHTML = `[SVG ICON...] Sign in with Google`; // Reset text
+                googleBtn.disabled = false;
+            });
+        }
+
+        // 🔒 CENTRAL VPS VERIFICATION LOGIC
+        function verifyWithVPS(uid) {
+            fetch(`${BACKEND_API_URL}/verify-admin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ loggedInUid: uid })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.authorized) {
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('adminPage').classList.remove('hidden');
+                    fetchUserDataFromVPS();
+                } else {
+                    alert("❌ Security Block: " + data.message);
+                    auth.signOut();
+                    resetLoginBtn();
+                }
+            })
+            .catch((err) => {
+                alert("❌ VPS Connection Error: " + err.message);
+                resetLoginBtn();
+            });
+        }
+
+        function resetLoginBtn() {
+            const btn = document.getElementById('loginBtn');
+            btn.innerText = "Authorize & Enter";
+            btn.disabled = false;
+        }
+
+        // Auto Login Checker on Page Load
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // Front-end hits VPS for verification
                 fetch(`${BACKEND_API_URL}/verify-admin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -109,33 +216,15 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.authorized) {
-                        document.getElementById('loadingGate').classList.add('hidden');
+                        document.getElementById('loginSection').classList.add('hidden');
                         document.getElementById('adminPage').classList.remove('hidden');
                         fetchUserDataFromVPS();
-                    } else {
-                        alert("❌ VPS Denied Access: " + data.message);
-                        triggerKickout();
                     }
-                })
-                .catch((err) => {
-                    alert("❌ Network Error: Cannot connect to VPS Server! Details: " + err.message);
-                    triggerKickout();
-                });
-            } else {
-                // Mobile state backup wait
-                setTimeout(() => {
-                    if (!auth.currentUser) {
-                        alert("❌ No login session detected. Please login first!");
-                        triggerKickout();
-                    }
-                }, 3000);
+                }).catch(() => {});
             }
         });
 
-        function triggerKickout() {
-            window.location.href = "index.html";
-        }
-
+        // (Baki saare functions fetchUserDataFromVPS, renderTable etc. bilkul pehle jaise same rahenge...)
         function fetchUserDataFromVPS() {
             fetch(`${BACKEND_API_URL}/get-users`)
             .then(res => res.json())
@@ -164,7 +253,7 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    alert(`Promo Code ${name} generated!`);
+                    alert(`Promo Code ${name} generated successfully!`);
                     document.getElementById('newCodeName').value = "";
                     document.getElementById('newCodeDiscount').value = "";
                     document.getElementById('newCodeOwner').value = "";
@@ -181,7 +270,6 @@
             .then(coupons => {
                 const dropdown = document.getElementById('codeFilter');
                 const currentSelection = dropdown.value;
-                
                 dropdown.innerHTML = '<option value="all">All Users</option>';
                 Object.keys(coupons).forEach(code => {
                     dropdown.innerHTML += `<option value="${code}">${code}</option>`;
@@ -198,7 +286,6 @@
             Object.keys(users).forEach(userId => {
                 const user = users[userId];
                 const promoUsed = user.referred_by || "DIRECT";
-                
                 if (filterCode !== "all" && promoUsed !== filterCode) return;
                 count++;
 
@@ -208,7 +295,6 @@
                     const currentDate = new Date();
                     const differenceInTime = currentDate.getTime() - payDate.getTime();
                     const differenceInDays = Math.floor(differenceInTime / (1000 * 3600 * 24));
-                    
                     const planType = user.plan_type ? user.plan_type.toUpperCase() : "MONTHLY";
                     daysDisplay = `${differenceInDays} Days Active (${planType})`;
                 } else if (user.plan === "free_access") {
@@ -245,7 +331,6 @@
                 `;
                 tbody.innerHTML += row;
             });
-
             document.getElementById('userCount').innerText = count;
         }
 
@@ -258,7 +343,7 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    alert("User State Updated!");
+                    alert("User State Modified!");
                     fetchUserDataFromVPS();
                 } else {
                     alert("Failed: " + data.message);
@@ -272,7 +357,11 @@
         }
 
         function logoutAdmin() {
-            auth.signOut().then(() => triggerKickout());
+            auth.signOut().then(() => {
+                document.getElementById('adminPage').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+                resetLoginBtn();
+            });
         }
     </script>
 </body>
