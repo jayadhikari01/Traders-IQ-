@@ -7,15 +7,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-[#0B0E14] text-gray-200 font-sans antialiased hidden" id="adminPage">
 
-    <!-- Navigation -->
     <div class="border-b border-gray-800 bg-[#121620] px-6 py-4 flex justify-between items-center">
         <div>
             <h1 class="text-xl font-bold text-white tracking-wide">Traders IQ Elite Terminal</h1>
-            <p class="text-xs text-gray-400">Master Admin Control Panel (Single-User Mode Authorized)</p>
+            <p class="text-xs text-gray-400">Master Admin Control Panel (Secure VPS Mode)</p>
         </div>
         <button onclick="logoutAdmin()" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 text-sm font-medium rounded-lg border border-red-500/20 transition-all cursor-pointer">
             Secure Logout
@@ -24,7 +22,6 @@
 
     <div class="max-w-7xl mx-auto p-6 space-y-6">
         
-        <!-- 🆕 PROMO CODE GENERATOR SECTION -->
         <div class="bg-[#121620] p-6 rounded-2xl border border-gray-800 shadow-xl">
             <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Create New Discount Promo Code
@@ -48,7 +45,6 @@
             </div>
         </div>
 
-        <!-- Stats & Filter Section -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="flex items-center gap-3 bg-[#121620] px-4 py-2.5 rounded-xl border border-gray-800">
                 <label for="codeFilter" class="text-sm font-medium text-gray-400">Filter by Promo Code:</label>
@@ -61,7 +57,6 @@
             </div>
         </div>
 
-        <!-- Main User Table -->
         <div class="bg-[#121620] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -75,82 +70,97 @@
                         </tr>
                     </thead>
                     <tbody id="userTableBody" class="divide-y divide-gray-800 text-sm">
-                        <!-- Injected via JS -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. Firebase Config
+        // 🚨 CONFIGURATION: Apne VPS Backend Server ka URL yahan daalein
+        const BACKEND_API_URL = "http://YOUR_VPS_IP_OR_DOMAIN:3000/api";
+
+        // Firebase Client initialization sirf authentication state check karne ke liye (Aapki public keys)
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "YOUR_FRONTEND_PUBLIC_API_KEY",
+            authDomain: "YOUR_FRONTEND_AUTH_DOMAIN"
         };
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
         const auth = firebase.auth();
 
-        // 🔒 HARD LOCK SINGLE-USER SECURITY (Put your exact UID here)
-        const MASTER_ADMIN_UID = "YOUR_PERSONAL_FIREBASE_UID_HERE"; 
+        let allUsersData = {};
 
+        // 🔒 HEAVY SECURITY LAYER WITH VPS ENV VARIABLES
         auth.onAuthStateChanged((user) => {
-            if (user && user.uid === MASTER_ADMIN_UID) {
-                // Access Granted
-                document.getElementById('adminPage').classList.remove('hidden');
-                fetchUserData();
+            if (user) {
+                // Front-end ab faisla nahi karega, wo VPS server ke env se verify karwayega
+                fetch(`${BACKEND_API_URL}/verify-admin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ loggedInUid: user.uid })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.authorized) {
+                        // Agar VPS ne bola HAAN toh hi page dikhega
+                        document.getElementById('adminPage').classList.remove('hidden');
+                        fetchUserDataFromVPS();
+                    } else {
+                        window.location.href = "index.html"; 
+                    }
+                })
+                .catch(() => window.location.href = "index.html");
             } else {
-                // Absolute Restriction -> Kickout
                 window.location.href = "index.html"; 
             }
         });
 
-        let allUsersData = {};
-
-        function fetchUserData() {
-            database.ref('users').on('value', (snapshot) => {
-                allUsersData = snapshot.val() || {};
+        // 📊 FETCH DATA VIA VPS
+        function fetchUserDataFromVPS() {
+            fetch(`${BACKEND_API_URL}/get-users`)
+            .then(res => res.json())
+            .then(data => {
+                allUsersData = data || {};
                 renderTable(allUsersData);
-                fetchPromoCodes(); // Live promo codes reload karne ke liye
+                fetchPromoCodesFromVPS();
             });
         }
 
-        // 🆕 FUNCTION: CREATE NEW PROMO CODE DIRECT IN FIREBASE
+        // 🆕 PROMO CODE GENERATE THROUGH VPS SERVER
         function createNewPromoCode() {
             const name = document.getElementById('newCodeName').value.trim().toUpperCase();
             const discount = document.getElementById('newCodeDiscount').value;
             const owner = document.getElementById('newCodeOwner').value.trim();
 
             if (!name || !discount || !owner) {
-                alert("Please fill all details to create a promo code!");
+                alert("Please fill all details!");
                 return;
             }
 
-            // Firebase mein 'coupons' naam ke table mein save hoga
-            database.ref('coupons/' + name).set({
-                discount: parseInt(discount),
-                influencer_name: owner,
-                created_at: new Date().toISOString()
+            fetch(`${BACKEND_API_URL}/create-promo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, discount: parseInt(discount), owner })
             })
-            .then(() => {
-                alert(`Promo Code ${name} generated successfully!`);
-                document.getElementById('newCodeName').value = "";
-                document.getElementById('newCodeDiscount').value = "";
-                document.getElementById('newCodeOwner').value = "";
-            })
-            .catch(err => alert("Failed to save code: " + err.message));
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert(`Promo Code ${name} generated successfully!`);
+                    document.getElementById('newCodeName').value = "";
+                    document.getElementById('newCodeDiscount').value = "";
+                    document.getElementById('newCodeOwner').value = "";
+                    fetchUserDataFromVPS();
+                } else {
+                    alert("Error creating code: " + data.message);
+                }
+            });
         }
 
-        // 🆕 FUNCTION: FETCH CODES FOR DROPDOWN FILTER
-        function fetchPromoCodes() {
-            database.ref('coupons').once('value', (snapshot) => {
-                const coupons = snapshot.val() || {};
+        // FETCH ACTIVE CODES FOR DROPDOWN VIA VPS
+        function fetchPromoCodesFromVPS() {
+            fetch(`${BACKEND_API_URL}/get-promos`)
+            .then(res => res.json())
+            .then(coupons => {
                 const dropdown = document.getElementById('codeFilter');
                 const currentSelection = dropdown.value;
                 
@@ -219,14 +229,22 @@
             document.getElementById('userCount').innerText = count;
         }
 
+        // UPDATE STATUS VIA VPS API
         function updateUserStatus(userId, newPlan) {
-            const updates = { plan: newPlan };
-            if (newPlan === 'free_access') {
-                updates.payment_date = new Date().toISOString();
-            }
-            database.ref('users/' + userId).update(updates)
-            .then(() => alert("User Access Updated!"))
-            .catch(err => alert("Error: " + err.message));
+            fetch(`${BACKEND_API_URL}/update-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, newPlan })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert("User Access Updated Successfully!");
+                    fetchUserDataFromVPS();
+                } else {
+                    alert("Update failed: " + data.message);
+                }
+            });
         }
 
         function filterUsers() {
