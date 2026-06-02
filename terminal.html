@@ -209,7 +209,7 @@
                 const currentSelection = dropdown.value;
                 dropdown.innerHTML = '<option value="all">All Users</option><option value="DIRECT">DIRECT</option>';
                 Object.keys(coupons).forEach(code => {
-                    dropdown.innerHTML += `<option value="${code}">${code}</option>';
+                    dropdown.innerHTML += `<option value="${code}">${code}</option>`;
                 });
                 dropdown.value = currentSelection;
             });
@@ -222,11 +222,10 @@
 
             Object.keys(users).forEach(userId => {
                 const user = users[userId];
-                if (!user) return; 
+                if (!user || !user.email) return; 
 
-                const emailDisplay = user.email || "No Email";
                 const promoUsed = (user.referred_by || "DIRECT").toUpperCase();
-                const planType = (user.plan_type || "N/A").toUpperCase();
+                const planType = (user.plan_type || "N/A").toUpperCase(); // Plan Type yahan access kiya hai
                 const filterVal = filterCode.toUpperCase();
                 
                 if (filterVal !== "ALL" && promoUsed !== filterVal) return;
@@ -251,7 +250,7 @@
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-[#161B26] transition-colors">
-                        <td class="px-6 py-4"><div class="font-medium text-white">${emailDisplay}</div><div class="text-xs text-gray-500">ID: ${userId}</div></td>
+                        <td class="px-6 py-4"><div class="font-medium text-white">${user.email}</div><div class="text-xs text-gray-500">ID: ${userId}</div></td>
                         <td class="px-6 py-4 font-mono text-xs font-semibold ${promoUsed !== 'DIRECT' ? 'text-yellow-400' : 'text-gray-500'}">${promoUsed}</td>
                         <td class="px-6 py-4 text-xs text-gray-300 font-medium">${planType}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
@@ -293,4 +292,5 @@
         }
     </script>
 </body>
-</html>
+    </html>
+    
