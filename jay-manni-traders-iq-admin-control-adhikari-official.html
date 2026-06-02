@@ -8,114 +8,134 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
-<body class="bg-[#0B0E14] text-gray-200 font-sans antialiased hidden" id="adminPage">
+<body class="bg-[#0B0E14] text-gray-200 font-sans antialiased text-sm">
 
-    <div class="border-b border-gray-800 bg-[#121620] px-6 py-4 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-bold text-white tracking-wide">Traders IQ Elite Terminal</h1>
-            <p class="text-xs text-gray-400">Master Admin Control Panel (Secure VPS Mode)</p>
-        </div>
-        <button onclick="logoutAdmin()" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 text-sm font-medium rounded-lg border border-red-500/20 transition-all cursor-pointer">
-            Secure Logout
-        </button>
+    <div id="loadingGate" class="fixed inset-0 bg-[#0B0E14] flex flex-col justify-center items-center z-50 transition-all duration-500">
+        <div class="w-10 h-10 border-4 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin mb-4"></div>
+        <p class="text-sm font-medium text-gray-400 tracking-wide">Securing Session Connection...</p>
     </div>
 
-    <div class="max-w-7xl mx-auto p-6 space-y-6">
-        
-        <div class="bg-[#121620] p-6 rounded-2xl border border-gray-800 shadow-xl">
-            <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Create New Discount Promo Code
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Promo Code (UPPERCASE)</label>
-                    <input type="text" id="newCodeName" placeholder="E.g., AMIT30" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400 font-mono uppercase">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Discount Value (%)</label>
-                    <input type="number" id="newCodeDiscount" placeholder="E.g., 30" min="1" max="100" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Influencer / Owner Name</label>
-                    <input type="text" id="newCodeOwner" placeholder="E.g., Amit Sharma" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
-                </div>
-                <button onclick="createNewPromoCode()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition-all cursor-pointer shadow-lg shadow-yellow-500/10">
-                    Generate Code
-                </button>
+    <div id="adminPage" class="hidden">
+        <div class="border-b border-gray-800 bg-[#121620] px-6 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-wide">Traders IQ Elite Terminal</h1>
+                <p class="text-xs text-gray-400">Master Admin Control Panel (Secure VPS Guard Mode)</p>
             </div>
+            <button onclick="logoutAdmin()" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 text-xs font-medium rounded-lg border border-red-500/20 transition-all cursor-pointer">
+                Secure Logout
+            </button>
         </div>
 
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="flex items-center gap-3 bg-[#121620] px-4 py-2.5 rounded-xl border border-gray-800">
-                <label for="codeFilter" class="text-sm font-medium text-gray-400">Filter by Promo Code:</label>
-                <select id="codeFilter" onchange="filterUsers()" class="bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-1.5 focus:outline-none focus:border-blue-500">
-                    <option value="all">All Users</option>
-                </select>
+        <div class="max-w-7xl mx-auto p-6 space-y-6">
+            
+            <div class="bg-[#121620] p-6 rounded-2xl border border-gray-800 shadow-xl">
+                <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Create New Discount Promo Code
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Promo Code (UPPERCASE)</label>
+                        <input type="text" id="newCodeName" placeholder="E.g., AMIT30" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400 font-mono uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Discount Value (%)</label>
+                        <input type="number" id="newCodeDiscount" placeholder="E.g., 30" min="1" max="100" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Influencer / Owner Name</label>
+                        <input type="text" id="newCodeOwner" placeholder="E.g., Amit Sharma" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
+                    </div>
+                    <button onclick="createNewPromoCode()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer shadow-lg shadow-yellow-500/10">
+                        Generate Code
+                    </button>
+                </div>
             </div>
-            <div class="text-sm bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-2.5 rounded-xl">
-                Active Users Filtered: <span id="userCount" class="font-bold text-white">0</span>
-            </div>
-        </div>
 
-        <div class="bg-[#121620] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-gray-800 bg-[#161B26] text-xs font-semibold uppercase tracking-wider text-gray-400">
-                            <th class="px-6 py-4">User Details</th>
-                            <th class="px-6 py-4">Promo Code</th>
-                            <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Subscription Age</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userTableBody" class="divide-y divide-gray-800 text-sm">
-                        </tbody>
-                </table>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-3 bg-[#121620] px-4 py-2.5 rounded-xl border border-gray-800">
+                    <label for="codeFilter" class="text-xs font-medium text-gray-400">Filter by Promo Code:</label>
+                    <select id="codeFilter" onchange="filterUsers()" class="bg-[#1A1F2C] text-white text-xs rounded-lg border border-gray-700 p-1.5 focus:outline-none focus:border-blue-500">
+                        <option value="all">All Users</option>
+                    </select>
+                </div>
+                <div class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-2.5 rounded-xl">
+                    Active Users Filtered: <span id="userCount" class="font-bold text-white">0</span>
+                </div>
+            </div>
+
+            <div class="bg-[#121620] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-800 bg-[#161B26] text-xs font-semibold uppercase tracking-wider text-gray-400">
+                                <th class="px-6 py-4">User Details</th>
+                                <th class="px-6 py-4">Promo Code</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Subscription Age</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody" class="divide-y divide-gray-800 text-xs">
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 🚨 CONFIGURATION: Apne VPS Backend Server ka URL yahan daalein
+        // 🚨 ADJUST THIS: Apne VPS Server ka exact URL ya IP Port yahan daalein
         const BACKEND_API_URL = "http://YOUR_VPS_IP_OR_DOMAIN:3000/api";
 
-        // Firebase Client initialization sirf authentication state check karne ke liye (Aapki public keys)
+        // Firebase Initialization (Sirf session reading ke liye public credentials)
         const firebaseConfig = {
-            apiKey: "YOUR_FRONTEND_PUBLIC_API_KEY",
-            authDomain: "YOUR_FRONTEND_AUTH_DOMAIN"
+            apiKey: "YOUR_PUBLIC_FIREBASE_API_KEY",
+            authDomain: "YOUR_PUBLIC_FIREBASE_AUTH_DOMAIN"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
         let allUsersData = {};
 
-        // 🔒 HEAVY SECURITY LAYER WITH VPS ENV VARIABLES
+        // 🔒 MOBILE DELAY SECURE GATEWAY
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // Front-end ab faisla nahi karega, wo VPS server ke env se verify karwayega
+                // Front-end ab faisla nahi karega, wo direct VPS Backend se poochega
                 fetch(`${BACKEND_API_URL}/verify-admin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ loggedInUid: user.uid })
                 })
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error("Unauthorized");
+                    return res.json();
+                })
                 .then(data => {
                     if (data.authorized) {
-                        // Agar VPS ne bola HAAN toh hi page dikhega
+                        // Verification Success -> Gate hatao aur dashboard dikhao
+                        document.getElementById('loadingGate').classList.add('hidden');
                         document.getElementById('adminPage').classList.remove('hidden');
                         fetchUserDataFromVPS();
                     } else {
-                        window.location.href = "index.html"; 
+                        triggerKickout();
                     }
                 })
-                .catch(() => window.location.href = "index.html");
+                .catch(() => triggerKickout());
             } else {
-                window.location.href = "index.html"; 
+                // Phone delay adjustment: Agar instantaneous token na mile toh 2.5 second wait karo
+                setTimeout(() => {
+                    if (!auth.currentUser) {
+                        triggerKickout();
+                    }
+                }, 2500);
             }
         });
 
-        // 📊 FETCH DATA VIA VPS
+        function triggerKickout() {
+            window.location.href = "index.html";
+        }
+
+        // 📊 FETCH DATA FROM VPS
         function fetchUserDataFromVPS() {
             fetch(`${BACKEND_API_URL}/get-users`)
             .then(res => res.json())
@@ -126,7 +146,7 @@
             });
         }
 
-        // 🆕 PROMO CODE GENERATE THROUGH VPS SERVER
+        // 🆕 CREATE PROMO CODE VIA VPS
         function createNewPromoCode() {
             const name = document.getElementById('newCodeName').value.trim().toUpperCase();
             const discount = document.getElementById('newCodeDiscount').value;
@@ -140,7 +160,7 @@
             fetch(`${BACKEND_API_URL}/create-promo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, discount: parseInt(discount), owner })
+                body: JSON.stringify({ name, discount, owner })
             })
             .then(res => res.json())
             .then(data => {
@@ -151,12 +171,12 @@
                     document.getElementById('newCodeOwner').value = "";
                     fetchUserDataFromVPS();
                 } else {
-                    alert("Error creating code: " + data.message);
+                    alert("Failed to save: " + data.message);
                 }
             });
         }
 
-        // FETCH ACTIVE CODES FOR DROPDOWN VIA VPS
+        // FETCH ACTIVE CODES FOR FILTER DROPDOWN
         function fetchPromoCodesFromVPS() {
             fetch(`${BACKEND_API_URL}/get-promos`)
             .then(res => res.json())
@@ -172,6 +192,7 @@
             });
         }
 
+        // RENDER LIVE INTERFACE TABLE (Supports Plan Types Tracker)
         function renderTable(users, filterCode = "all") {
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = "";
@@ -190,7 +211,10 @@
                     const currentDate = new Date();
                     const differenceInTime = currentDate.getTime() - payDate.getTime();
                     const differenceInDays = Math.floor(differenceInTime / (1000 * 3600 * 24));
-                    daysDisplay = `${differenceInDays} Days Active`;
+                    
+                    // Tracking Monthly vs Annual dynamically
+                    const planType = user.plan_type ? user.plan_type.toUpperCase() : "MONTHLY";
+                    daysDisplay = `${differenceInDays} Days Active (${planType})`;
                 } else if (user.plan === "free_access") {
                     daysDisplay = "Lifetime VIP (By Admin)";
                 }
@@ -212,7 +236,7 @@
                             ${promoUsed}
                         </td>
                         <td class="px-6 py-4">${statusBadge}</td>
-                        <td class="px-6 py-4 text-xs text-gray-400 font-medium">${daysDisplay}</td>
+                        <td class="px-6 py-4 text-gray-400 font-medium">${daysDisplay}</td>
                         <td class="px-6 py-4 text-right space-x-2">
                             <button onclick="updateUserStatus('${userId}', 'free_access')" class="bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500 hover:text-white px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer">
                                 Give VIP Access
@@ -229,7 +253,7 @@
             document.getElementById('userCount').innerText = count;
         }
 
-        // UPDATE STATUS VIA VPS API
+        // UPDATE STATUS HANDLER VIA VPS
         function updateUserStatus(userId, newPlan) {
             fetch(`${BACKEND_API_URL}/update-user`, {
                 method: 'POST',
@@ -239,10 +263,10 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    alert("User Access Updated Successfully!");
+                    alert("User Access State Modified!");
                     fetchUserDataFromVPS();
                 } else {
-                    alert("Update failed: " + data.message);
+                    alert("Modification failed: " + data.message);
                 }
             });
         }
@@ -253,8 +277,9 @@
         }
 
         function logoutAdmin() {
-            auth.signOut().then(() => window.location.href = "index.html");
+            auth.signOut().then(() => triggerKickout());
         }
     </script>
 </body>
-</html>
+    </html>
+    
