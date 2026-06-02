@@ -206,7 +206,6 @@
             .then(coupons => {
                 const dropdown = document.getElementById('codeFilter');
                 const currentSelection = dropdown.value;
-                // Added DIRECT here
                 dropdown.innerHTML = '<option value="all">All Users</option><option value="DIRECT">DIRECT</option>';
                 Object.keys(coupons).forEach(code => {
                     dropdown.innerHTML += `<option value="${code}">${code}</option>`;
@@ -222,10 +221,14 @@
 
             Object.keys(users).forEach(userId => {
                 const user = users[userId];
-                const promoUsed = user.referred_by || "DIRECT";
+                
+                // Check if user object is valid and email exists (ignoring deleted/empty entries)
+                if (!user || !user.email) return;
+
+                const promoUsed = (user.referred_by || "DIRECT").toUpperCase();
                 
                 // Logic updated to support filtering correctly
-                if (filterCode !== "all" && promoUsed !== filterCode) return;
+                if (filterCode !== "all" && promoUsed !== filterCode.toUpperCase()) return;
                 count++;
 
                 let daysDisplay = "N/A (No Pack)";
@@ -287,4 +290,5 @@
         }
     </script>
 </body>
-</html>
+    </html>
+    
