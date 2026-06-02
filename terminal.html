@@ -173,6 +173,7 @@
         });
 
         function fetchUserDataFromVPS() {
+            // Timestamp (?t=...) add kiya hai taaki browser naya data hi fetch kare
             fetch(`${BACKEND_API_URL}/get-users?t=${new Date().getTime()}`)
             .then(res => res.json())
             .then(data => {
@@ -209,7 +210,7 @@
                 const currentSelection = dropdown.value;
                 dropdown.innerHTML = '<option value="all">All Users</option><option value="DIRECT">DIRECT</option>';
                 Object.keys(coupons).forEach(code => {
-                    dropdown.innerHTML += `<option value="${code}">${code}</option>`;
+                    dropdown.innerHTML += `<option value="${code}">${code}</option>';
                 });
                 dropdown.value = currentSelection;
             });
@@ -222,15 +223,10 @@
 
             Object.keys(users).forEach(userId => {
                 const user = users[userId];
-                
-                if (!user) return;
+                if (!user || !user.email) return;
 
-                // Promo code logic
                 const promoUsed = (user.referred_by || "DIRECT").toUpperCase();
-                
-                // Naya: Plan Type add kiya (Monthly/Annual)
-                const planType = (user.plan_type || "N/A").toUpperCase();
-                
+                const planType = (user.plan_type || "N/A").toUpperCase(); // Plan type display
                 const filterVal = filterCode.toUpperCase();
                 
                 if (filterVal !== "ALL" && promoUsed !== filterVal) return;
@@ -248,15 +244,15 @@
                 }
 
                 const statusBadge = user.plan === "premium" ? 
-                    `<span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full text-xs font-medium">Active Premium</span>` : 
+                    `<span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full text-xs font-medium">Active</span>` : 
                     user.plan === "free_access" ? 
                     `<span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full text-xs font-medium">VIP Free</span>` :
                     `<span class="bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full text-xs font-medium">Unpaid</span>`;
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-[#161B26] transition-colors">
-                        <td class="px-6 py-4"><div class="font-medium text-white">${user.email || "No Email"}</div><div class="text-xs text-gray-500">ID: ${userId}</div></td>
-                        <td class="px-6 py-4 font-mono text-xs font-semibold ${promoUsed !== 'DIRECT' ? 'text-yellow-400' : 'text-gray-500'}">${promoUsed}</td>
+                        <td class="px-6 py-4"><div class="font-medium text-white">${user.email}</div><div class="text-xs text-gray-500">ID: ${userId}</div></td>
+                        <td class="px-6 py-4 font-mono text-xs font-semibold text-yellow-400">${promoUsed}</td>
                         <td class="px-6 py-4 text-xs font-medium text-gray-300">${planType}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
                         <td class="px-6 py-4 text-gray-400 font-medium">${daysDisplay}</td>
@@ -297,5 +293,4 @@
         }
     </script>
 </body>
-    </html>
-    
+</html>
