@@ -109,7 +109,7 @@
                             </tr>
                         </thead>
                         <tbody id="userTableBody" class="divide-y divide-gray-800 text-xs">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -154,7 +154,7 @@
             });
         }
 
-        // 🚀 2. GOOGLE LOGIN HANDLER (NEW OPTION)
+        // 🚀 2. GOOGLE LOGIN HANDLER (MOBILE REDIRECT COMPATIBLE FIX)
         function handleGoogleAdminLogin() {
             const googleBtn = document.getElementById('googleLoginBtn');
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -162,17 +162,23 @@
             googleBtn.innerText = "Opening Google Sign-In...";
             googleBtn.disabled = true;
 
-            // Mobile par signInWithPopup se behtar signInWithRedirect hota hai, par hum popup try karenge mobile fallback ke sath
-            auth.signInWithPopup(provider)
-            .then((result) => {
-                verifyWithVPS(result.user.uid);
-            })
-            .catch((err) => {
-                alert("❌ Google Login Failed: " + err.message);
-                googleBtn.innerHTML = `[SVG ICON...] Sign in with Google`; // Reset text
-                googleBtn.disabled = false;
-            });
+            // Mobile popup block issue fix ke liye Redirect use kiya hai
+            auth.signInWithRedirect(provider);
         }
+
+        // 🔄 HANDLE GOOGLE REDIRECT RESULTS ON PAGE LOAD
+        auth.getRedirectResult()
+        .then((result) => {
+            if (result && result.user) {
+                verifyWithVPS(result.user.uid);
+            }
+        })
+        .catch((err) => {
+            alert("❌ Google Redirect Failed: " + err.message);
+            const googleBtn = document.getElementById('googleLoginBtn');
+            googleBtn.innerText = "Sign in with Google";
+            googleBtn.disabled = false;
+        });
 
         // 🔒 CENTRAL VPS VERIFICATION LOGIC
         function verifyWithVPS(uid) {
@@ -224,7 +230,6 @@
             }
         });
 
-        // (Baki saare functions fetchUserDataFromVPS, renderTable etc. bilkul pehle jaise same rahenge...)
         function fetchUserDataFromVPS() {
             fetch(`${BACKEND_API_URL}/get-users`)
             .then(res => res.json())
@@ -365,5 +370,5 @@
         }
     </script>
 </body>
-    </html>
-    
+                        </html>
+                            
