@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traders IQ - Terminal Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body class="bg-[#0B0E14] text-gray-200 font-sans antialiased text-sm">
+
+    <div id="loginSection" class="fixed inset-0 bg-[#0B0E14] flex flex-col justify-center items-center z-50 px-4">
+        <div class="bg-[#121620] p-8 rounded-2xl border border-gray-800 shadow-2xl w-full max-w-md space-y-6">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-white tracking-wide">Traders IQ Terminal</h2>
+                <p class="text-xs text-gray-400 mt-1">Master Admin Secure Access Gateway</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Admin Email</label>
+                    <input type="email" id="adminEmail" placeholder="admin@tradersiq.xyz" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-3 focus:outline-none focus:border-yellow-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Secret Password</label>
+                    <input type="password" id="adminPassword" placeholder="••••••••" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-3 focus:outline-none focus:border-yellow-500">
+                </div>
+                <button type="button" onclick="handleAdminLogin()" id="loginBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-3 rounded-lg text-sm transition-all cursor-pointer shadow-lg shadow-yellow-500/10 flex justify-center items-center">
+                    Authorize & Enter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminPage" class="hidden">
+        <div class="border-b border-gray-800 bg-[#121620] px-6 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-wide">Traders IQ Elite Terminal</h1>
+                <p class="text-xs text-gray-400">Master Admin Control Panel (Secure VPS Guard Mode)</p>
+            </div>
+            <button onclick="logoutAdmin()" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 text-xs font-medium rounded-lg border border-red-500/20 transition-all cursor-pointer">
+                Secure Logout
+            </button>
+        </div>
+
+        <div class="max-w-7xl mx-auto p-6 space-y-6">
+            <div class="bg-[#121620] p-6 rounded-2xl border border-gray-800 shadow-xl">
+                <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Create New Discount Promo Code
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Promo Code (UPPERCASE)</label>
+                        <input type="text" id="newCodeName" placeholder="E.g., AMIT30" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400 font-mono uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Discount Value (%)</label>
+                        <input type="number" id="newCodeDiscount" placeholder="E.g., 30" min="1" max="100" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Influencer / Owner Name</label>
+                        <input type="text" id="newCodeOwner" placeholder="E.g., Amit Sharma" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
+                    </div>
+                    <button onclick="createNewPromoCode()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2.5 rounded-lg text-xs transition-all cursor-pointer shadow-lg shadow-yellow-500/10">
+                        Generate Code
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-3 bg-[#121620] px-4 py-2.5 rounded-xl border border-gray-800">
+                    <label for="codeFilter" class="text-xs font-medium text-gray-400">Filter by Promo Code:</label>
+                    <select id="codeFilter" onchange="filterUsers()" class="bg-[#1A1F2C] text-white text-xs rounded-lg border border-gray-700 p-1.5 focus:outline-none focus:border-blue-500">
+                        <option value="all">All Users</option>
+                    </select>
+                </div>
+                <div class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-2.5 rounded-xl">
+                    Active Users Filtered: <span id="userCount" class="font-bold text-white">0</span>
+                </div>
+            </div>
+
+            <div class="bg-[#121620] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-800 bg-[#161B26] text-xs font-semibold uppercase tracking-wider text-gray-400">
+                                <th class="px-6 py-4">User Details</th>
+                                <th class="px-6 py-4">Promo Code</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Subscription Age</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody" class="divide-y divide-gray-800 text-xs">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🚨 CONFIG: Apne VPS Server ka IP aur Port yahan sahi se daalein
+        const BACKEND_API_URL = "http://YOUR_VPS_IP_ADDRESS:3000/api";
+
+        // Firebase Client Config - Updated
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGQSZgdk2Y6cIV0gBIGHCApGZXPg4lJk",
+            authDomain: "traders-iq-app-f5169.firebaseapp.com",
+            projectId: "traders-iq-app-f5169",
+            storageBucket: "traders-iq-app-f5169.firebasestorage.app",
+            messagingSenderId: "411253913617",
+            appId: "1:411253913617:web:a8b10dba8bbefe1fb1d9b0",
+            measurementId: "G-6LX6KBFVQF"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        let allUsersData = {};
+
+        // 🚀 1. EMAIL/PASSWORD LOGIN HANDLER
+        function handleAdminLogin() {
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const btn = document.getElementById('loginBtn');
+
+            if (!email || !password) {
+                alert("Please fill both email and password!");
+                return;
+            }
+
+            btn.innerText = "Verifying Identity...";
+            btn.disabled = true;
+
+            auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                verifyWithVPS(userCredential.user.uid);
+            })
+            .catch((err) => {
+                alert("❌ Authentication Failed: " + err.message);
+                resetLoginBtn();
+            });
+        }
+
+        // 🔒 CENTRAL VPS VERIFICATION LOGIC
+        function verifyWithVPS(uid) {
+            fetch(`${BACKEND_API_URL}/verify-admin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ loggedInUid: uid })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.authorized) {
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('adminPage').classList.remove('hidden');
+                    fetchUserDataFromVPS();
+                } else {
+                    alert("❌ Security Block: " + data.message);
+                    auth.signOut();
+                    resetLoginBtn();
+                }
+            })
+            .catch((err) => {
+                alert("❌ VPS Connection Error: " + err.message);
+                resetLoginBtn();
+            });
+        }
+
+        function resetLoginBtn() {
+            const btn = document.getElementById('loginBtn');
+            btn.innerText = "Authorize & Enter";
+            btn.disabled = false;
+        }
+
+        // Auto Login Checker on Page Load
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                fetch(`${BACKEND_API_URL}/verify-admin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ loggedInUid: user.uid })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.authorized) {
+                        document.getElementById('loginSection').classList.add('hidden');
+                        document.getElementById('adminPage').classList.remove('hidden');
+                        fetchUserDataFromVPS();
+                    }
+                }).catch(() => {});
+            }
+        });
+
+        function fetchUserDataFromVPS() {
+            fetch(`${BACKEND_API_URL}/get-users`)
+            .then(res => res.json())
+            .then(data => {
+                allUsersData = data || {};
+                renderTable(allUsersData);
+                fetchPromoCodesFromVPS();
+            });
+        }
+
+        function createNewPromoCode() {
+            const name = document.getElementById('newCodeName').value.trim().toUpperCase();
+            const discount = document.getElementById('newCodeDiscount').value;
+            const owner = document.getElementById('newCodeOwner').value.trim();
+
+            if (!name || !discount || !owner) {
+                alert("Please fill all details!");
+                return;
+            }
+
+            fetch(`${BACKEND_API_URL}/create-promo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, discount, owner })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert(`Promo Code ${name} generated successfully!`);
+                    document.getElementById('newCodeName').value = "";
+                    document.getElementById('newCodeDiscount').value = "";
+                    document.getElementById('newCodeOwner').value = "";
+                    fetchUserDataFromVPS();
+                } else {
+                    alert("Failed: " + data.message);
+                }
+            });
+        }
+
+        function fetchPromoCodesFromVPS() {
+            fetch(`${BACKEND_API_URL}/get-promos`)
+            .then(res => res.json())
+            .then(coupons => {
+                const dropdown = document.getElementById('codeFilter');
+                const currentSelection = dropdown.value;
+                dropdown.innerHTML = '<option value="all">All Users</option>';
+                Object.keys(coupons).forEach(code => {
+                    dropdown.innerHTML += `<option value="${code}">${code}</option>`;
+                });
+                dropdown.value = currentSelection;
+            });
+        }
+
+        function renderTable(users, filterCode = "all") {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = "";
+            let count = 0;
+
+            Object.keys(users).forEach(userId => {
+                const user = users[userId];
+                const promoUsed = user.referred_by || "DIRECT";
+                if (filterCode !== "all" && promoUsed !== filterCode) return;
+                count++;
+
+                let daysDisplay = "N/A (No Pack)";
+                if (user.plan === "premium" && user.payment_date) {
+                    const payDate = new Date(user.payment_date);
+                    const currentDate = new Date();
+                    const differenceInTime = currentDate.getTime() - payDate.getTime();
+                    const differenceInDays = Math.floor(differenceInTime / (1000 * 3600 * 24));
+                    const planType = user.plan_type ? user.plan_type.toUpperCase() : "MONTHLY";
+                    daysDisplay = `${differenceInDays} Days Active (${planType})`;
+                } else if (user.plan === "free_access") {
+                    daysDisplay = "Lifetime VIP (By Admin)";
+                }
+
+                let statusBadge = `<span class="bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full text-xs font-medium">Unpaid</span>`;
+                if (user.plan === "premium") {
+                    statusBadge = `<span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full text-xs font-medium">Active Premium</span>`;
+                } else if (user.plan === "free_access") {
+                    statusBadge = `<span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full text-xs font-medium">VIP Free</span>`;
+                }
+
+                const row = `
+                    <tr class="hover:bg-[#161B26] transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-white">${user.email}</div>
+                            <div class="text-xs text-gray-500">ID: ${userId}</div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs font-semibold ${promoUsed !== 'DIRECT' ? 'text-yellow-400' : 'text-gray-500'}">
+                            ${promoUsed}
+                        </td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-gray-400 font-medium">${daysDisplay}</td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button onclick="updateUserStatus('${userId}', 'free_access')" class="bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500 hover:text-white px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer">
+                                Give VIP Access
+                            </button>
+                            <button onclick="updateUserStatus('${userId}', 'unpaid')" class="bg-gray-700 text-gray-300 hover:bg-red-600 hover:text-white px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer">
+                                Revoke Pack
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+            document.getElementById('userCount').innerText = count;
+        }
+
+        function updateUserStatus(userId, newPlan) {
+            fetch(`${BACKEND_API_URL}/update-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, newPlan })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert("User State Modified!");
+                    fetchUserDataFromVPS();
+                } else {
+                    alert("Failed: " + data.message);
+                }
+            });
+        }
+
+        function filterUsers() {
+            const selectedCode = document.getElementById('codeFilter').value;
+            renderTable(allUsersData, selectedCode);
+        }
+
+        function logoutAdmin() {
+            auth.signOut().then(() => {
+                document.getElementById('adminPage').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+                resetLoginBtn();
+            });
+        }
+    </script>
+</body>
+</html>
