@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traders IQ - Terminal Control</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body class="bg-[#0B0E14] text-gray-200 font-sans antialiased hidden" id="adminPage">
+
+    <!-- Navigation -->
+    <div class="border-b border-gray-800 bg-[#121620] px-6 py-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold text-white tracking-wide">Traders IQ Elite Terminal</h1>
+            <p class="text-xs text-gray-400">Master Admin Control Panel (Single-User Mode Authorized)</p>
+        </div>
+        <button onclick="logoutAdmin()" class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-4 py-2 text-sm font-medium rounded-lg border border-red-500/20 transition-all cursor-pointer">
+            Secure Logout
+        </button>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+        
+        <!-- 🆕 PROMO CODE GENERATOR SECTION -->
+        <div class="bg-[#121620] p-6 rounded-2xl border border-gray-800 shadow-xl">
+            <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Create New Discount Promo Code
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Promo Code (UPPERCASE)</label>
+                    <input type="text" id="newCodeName" placeholder="E.g., AMIT30" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400 font-mono uppercase">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Discount Value (%)</label>
+                    <input type="number" id="newCodeDiscount" placeholder="E.g., 30" min="1" max="100" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Influencer / Owner Name</label>
+                    <input type="text" id="newCodeOwner" placeholder="E.g., Amit Sharma" class="w-full bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-2.5 focus:outline-none focus:border-yellow-400">
+                </div>
+                <button onclick="createNewPromoCode()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition-all cursor-pointer shadow-lg shadow-yellow-500/10">
+                    Generate Code
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats & Filter Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-3 bg-[#121620] px-4 py-2.5 rounded-xl border border-gray-800">
+                <label for="codeFilter" class="text-sm font-medium text-gray-400">Filter by Promo Code:</label>
+                <select id="codeFilter" onchange="filterUsers()" class="bg-[#1A1F2C] text-white text-sm rounded-lg border border-gray-700 p-1.5 focus:outline-none focus:border-blue-500">
+                    <option value="all">All Users</option>
+                </select>
+            </div>
+            <div class="text-sm bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-2.5 rounded-xl">
+                Active Users Filtered: <span id="userCount" class="font-bold text-white">0</span>
+            </div>
+        </div>
+
+        <!-- Main User Table -->
+        <div class="bg-[#121620] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-800 bg-[#161B26] text-xs font-semibold uppercase tracking-wider text-gray-400">
+                            <th class="px-6 py-4">User Details</th>
+                            <th class="px-6 py-4">Promo Code</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Subscription Age</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody" class="divide-y divide-gray-800 text-sm">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Firebase Config
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        // 🔒 HARD LOCK SINGLE-USER SECURITY (Put your exact UID here)
+        const MASTER_ADMIN_UID = "YOUR_PERSONAL_FIREBASE_UID_HERE"; 
+
+        auth.onAuthStateChanged((user) => {
+            if (user && user.uid === MASTER_ADMIN_UID) {
+                // Access Granted
+                document.getElementById('adminPage').classList.remove('hidden');
+                fetchUserData();
+            } else {
+                // Absolute Restriction -> Kickout
+                window.location.href = "index.html"; 
+            }
+        });
+
+        let allUsersData = {};
+
+        function fetchUserData() {
+            database.ref('users').on('value', (snapshot) => {
+                allUsersData = snapshot.val() || {};
+                renderTable(allUsersData);
+                fetchPromoCodes(); // Live promo codes reload karne ke liye
+            });
+        }
+
+        // 🆕 FUNCTION: CREATE NEW PROMO CODE DIRECT IN FIREBASE
+        function createNewPromoCode() {
+            const name = document.getElementById('newCodeName').value.trim().toUpperCase();
+            const discount = document.getElementById('newCodeDiscount').value;
+            const owner = document.getElementById('newCodeOwner').value.trim();
+
+            if (!name || !discount || !owner) {
+                alert("Please fill all details to create a promo code!");
+                return;
+            }
+
+            // Firebase mein 'coupons' naam ke table mein save hoga
+            database.ref('coupons/' + name).set({
+                discount: parseInt(discount),
+                influencer_name: owner,
+                created_at: new Date().toISOString()
+            })
+            .then(() => {
+                alert(`Promo Code ${name} generated successfully!`);
+                document.getElementById('newCodeName').value = "";
+                document.getElementById('newCodeDiscount').value = "";
+                document.getElementById('newCodeOwner').value = "";
+            })
+            .catch(err => alert("Failed to save code: " + err.message));
+        }
+
+        // 🆕 FUNCTION: FETCH CODES FOR DROPDOWN FILTER
+        function fetchPromoCodes() {
+            database.ref('coupons').once('value', (snapshot) => {
+                const coupons = snapshot.val() || {};
+                const dropdown = document.getElementById('codeFilter');
+                const currentSelection = dropdown.value;
+                
+                dropdown.innerHTML = '<option value="all">All Users</option>';
+                Object.keys(coupons).forEach(code => {
+                    dropdown.innerHTML += `<option value="${code}">${code}</option>`;
+                });
+                dropdown.value = currentSelection;
+            });
+        }
+
+        function renderTable(users, filterCode = "all") {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = "";
+            let count = 0;
+
+            Object.keys(users).forEach(userId => {
+                const user = users[userId];
+                const promoUsed = user.referred_by || "DIRECT";
+                
+                if (filterCode !== "all" && promoUsed !== filterCode) return;
+                count++;
+
+                let daysDisplay = "N/A (No Pack)";
+                if (user.plan === "premium" && user.payment_date) {
+                    const payDate = new Date(user.payment_date);
+                    const currentDate = new Date();
+                    const differenceInTime = currentDate.getTime() - payDate.getTime();
+                    const differenceInDays = Math.floor(differenceInTime / (1000 * 3600 * 24));
+                    daysDisplay = `${differenceInDays} Days Active`;
+                } else if (user.plan === "free_access") {
+                    daysDisplay = "Lifetime VIP (By Admin)";
+                }
+
+                let statusBadge = `<span class="bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-full text-xs font-medium">Unpaid</span>`;
+                if (user.plan === "premium") {
+                    statusBadge = `<span class="bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full text-xs font-medium">Active Premium</span>`;
+                } else if (user.plan === "free_access") {
+                    statusBadge = `<span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full text-xs font-medium">VIP Free</span>`;
+                }
+
+                const row = `
+                    <tr class="hover:bg-[#161B26] transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-white">${user.email}</div>
+                            <div class="text-xs text-gray-500">ID: ${userId}</div>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-xs font-semibold ${promoUsed !== 'DIRECT' ? 'text-yellow-400' : 'text-gray-500'}">
+                            ${promoUsed}
+                        </td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-xs text-gray-400 font-medium">${daysDisplay}</td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button onclick="updateUserStatus('${userId}', 'free_access')" class="bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500 hover:text-white px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer">
+                                Give VIP Access
+                            </button>
+                            <button onclick="updateUserStatus('${userId}', 'unpaid')" class="bg-gray-700 text-gray-300 hover:bg-red-600 hover:text-white px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer">
+                                Revoke Pack
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            document.getElementById('userCount').innerText = count;
+        }
+
+        function updateUserStatus(userId, newPlan) {
+            const updates = { plan: newPlan };
+            if (newPlan === 'free_access') {
+                updates.payment_date = new Date().toISOString();
+            }
+            database.ref('users/' + userId).update(updates)
+            .then(() => alert("User Access Updated!"))
+            .catch(err => alert("Error: " + err.message));
+        }
+
+        function filterUsers() {
+            const selectedCode = document.getElementById('codeFilter').value;
+            renderTable(allUsersData, selectedCode);
+        }
+
+        function logoutAdmin() {
+            auth.signOut().then(() => window.location.href = "index.html");
+        }
+    </script>
+</body>
+</html>
