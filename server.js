@@ -20,12 +20,21 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-const db = admin.firestore(); // Realtime DB ki jagah Firestore use ho raha hai
+const db = admin.firestore(); 
 
-// API Routes (Updated for Firestore)
+// Security Variable: Vercel/Render ke environment se UID utha raha hai
+const MASTER_ADMIN_UID = process.env.MASTER_ADMIN_UID;
+
+// API Routes
 app.post('/api/verify-admin', async (req, res) => {
-    // Yahan tum basic verification kar sakte ho
-    res.json({ authorized: true });
+    const { loggedInUid } = req.body;
+    
+    // Sirf tumhari UID match hone par hi access milega
+    if (MASTER_ADMIN_UID && loggedInUid === MASTER_ADMIN_UID) {
+        res.json({ authorized: true });
+    } else {
+        res.status(403).json({ authorized: false, message: "Unauthorized access! Only the Master Admin is allowed." });
+    }
 });
 
 app.get('/api/get-users', async (req, res) => {
@@ -76,4 +85,3 @@ app.get('/api/get-promos', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-          
