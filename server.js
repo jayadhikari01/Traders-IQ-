@@ -21,15 +21,11 @@ admin.initializeApp({
 });
 
 const db = admin.firestore(); 
-
-// Security Variable: Vercel/Render ke environment se UID utha raha hai
 const MASTER_ADMIN_UID = process.env.MASTER_ADMIN_UID;
 
 // API Routes
 app.post('/api/verify-admin', async (req, res) => {
     const { loggedInUid } = req.body;
-    
-    // Sirf tumhari UID match hone par hi access milega
     if (MASTER_ADMIN_UID && loggedInUid === MASTER_ADMIN_UID) {
         res.json({ authorized: true });
     } else {
@@ -42,7 +38,11 @@ app.get('/api/get-users', async (req, res) => {
         const snapshot = await db.collection('users').get();
         const users = {};
         snapshot.forEach(doc => {
-            users[doc.id] = doc.data();
+            const userData = doc.data();
+            // Filter: Sirf wo users dikhayega jo delete nahi huye hain
+            if (!userData.deleted) {
+                users[doc.id] = userData;
+            }
         });
         res.json(users);
     } catch (error) {
@@ -85,3 +85,4 @@ app.get('/api/get-promos', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  
