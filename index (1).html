@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Traders IQ | The Elite Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --bg-color: #0c0e10;
+            --text-color: #e2e2e4;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --surface-container: #1a1c1d;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .indigo-glow:hover {
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.2);
+        }
+
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(244, 63, 94, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(67, 56, 202, 0.05) 0%, transparent 60%);
+        }
+
+        .terminal-grid {
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .circuit-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10 L90 10 L90 90 L10 90 Z' fill='none' stroke='rgba(99,102,241,0.05)' stroke-width='0.5'/%3E%3Ccircle cx='10' cy='10' r='1' fill='rgba(99,102,241,0.1)'/%3E%3Ccircle cx='90' cy='10' r='1' fill='rgba(99,102,241,0.1)'/%3E%3C/svg%3E");
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+        }
+
+        #mobile-menu.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Image dimension fixes */
+        .img-container-fixed {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .img-container-fixed img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#333537",
+                        "on-primary": "#1000a9",
+                        "primary": "#c0c1ff",
+                        "surface": "#111415",
+                        "indigo-vibrant": "#6366f1",
+                        "error-container": "#93000a",
+                        "slate-900": "#0f172a",
+                        "inverse-surface": "#e2e2e4",
+                        "on-secondary": "#283044",
+                        "primary-container": "#8083ff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "on-tertiary": "#67001b",
+                        "on-error": "#690005",
+                        "surface-container": "#1e2022",
+                        "surface-container-lowest": "#0c0e10",
+                        "on-secondary-container": "#adb4ce",
+                        "error": "#ffb4ab",
+                        "secondary": "#bec6e0",
+                        "amber-warning": "#f59e0b",
+                        "tertiary-container": "#ff516a",
+                        "tertiary": "#ffb2b7",
+                        "outline-variant": "#464554",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-container-low": "#1a1c1d",
+                        "on-surface-variant": "#c7c4d7",
+                        "on-error-container": "#ffdad6",
+                        "background": "#111415",
+                        "on-tertiary-fixed": "#40000d",
+                        "tertiary-fixed": "#ffdadb",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "inverse-on-surface": "#2f3132",
+                        "on-primary-container": "#0d0096",
+                        "on-tertiary-fixed-variant": "#92002a",
+                        "secondary-fixed": "#dae2fd",
+                        "glass-surface": "rgba(255, 255, 255, 0.08)",
+                        "tertiary-fixed-dim": "#ffb2b7",
+                        "surface-bright": "#37393b",
+                        "surface-tint": "#c0c1ff",
+                        "rose-accent": "#f43f5e",
+                        "on-secondary-fixed": "#131b2e",
+                        "on-background": "#e2e2e4",
+                        "on-surface": "#e2e2e4",
+                        "surface-container-highest": "#333537",
+                        "on-tertiary-container": "#5b0017",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-fixed": "#07006c",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "secondary-container": "#3f465c",
+                        "glass-border": "rgba(255, 255, 255, 0.15)",
+                        "indigo-deep": "#4338ca",
+                        "outline": "#908fa0",
+                        "surface-dim": "#111415",
+                        "surface-container-high": "#282a2c",
+                        "inverse-primary": "#494bd6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "2.5rem",
+                        "card-padding-lg": "3rem",
+                        "section-gap": "10rem",
+                        "gutter": "1.5rem",
+                        "margin-mobile": "1.5rem",
+                        "card-padding": "2.5rem"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-xl": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                        "display-xl": ["clamp(40px, 10vw, 96px)", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "500"}],
+                        "display-lg": ["clamp(32px, 8vw, 64px)", {"lineHeight": "1.1", "letterSpacing": "-0.03em", "fontWeight": "800"}],
+                        "body-lg": ["20px", {"lineHeight": "1.6", "letterSpacing": "0em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "900"}],
+                        "label-sm": ["10px", {"lineHeight": "1", "letterSpacing": "0.3em", "fontWeight": "900"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "900"}],
+                        "display-lg-mobile": ["clamp(32px, 8vw, 48px)", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "label-md": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "900"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface overflow-x-hidden selection:bg-indigo-vibrant/30">
+<div class="mesh-bg"></div>
+<div class="terminal-grid fixed inset-0 pointer-events-none opacity-20"></div>
+<div class="hero-gradient fixed inset-0 pointer-events-none z-0"></div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-1/2 -translate-x-1/2 z-[60] flex items-center px-4 md:px-8 py-2 md:py-3 glass-card rounded-full mt-4 md:mt-6 w-[92%] sm:w-[85%] md:w-max shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] justify-between transition-all duration-500">
+<div class="flex items-center gap-2 md:gap-3 mr-4 md:mr-12 whitespace-nowrap">
+<img alt="Traders IQ Logo" class="w-8 h-8 md:w-10 md:h-10 object-cover rounded-lg shadow-inner flex-shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8dzrdpD5yKigfbex2076Y_CH20o3aDr_4GVQTROoOoh_2WzjgIKui0QYD7L3AeBTxHT-4njTxxVWqAgi90RrghfiIgf4pQBRRiz3opxji7pE_qf5ePcCDieni8Xqu7mFQd-QiglKOee2RuaY_zONS-CCwBWLb-1XS-n8dmCFLRqU9Cdb6k6p6XGuKWjIBHptripvpjt05Eblj7HEgA_k7QU24CUdCth13hmkfC9ZXQ2Dx79kUFzRmkF32H-Q10gbO6_R0XGo1QL4"/>
+<div class="font-display-lg text-[16px] md:text-[22px] tracking-tight text-on-surface font-bold">Traders IQ</div>
+</div>
+<div class="hidden md:flex gap-6 lg:gap-8 items-center">
+<a class="font-label-md text-label-md text-primary font-bold hover:scale-105 transition-all duration-300 relative group" href="dashboard.html">
+            Dashboard
+            <span class="absolute -bottom-1 left-0 w-full h-0.5 bg-primary rounded-full scale-x-100 transition-transform origin-left"></span>
+</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:scale-105 hover:text-primary transition-all duration-300" href="#features">Features</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:scale-105 hover:text-primary transition-all duration-300" href="login.html">Leaderboard</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:scale-105 hover:text-primary transition-all duration-300" href="#pricing">Pricing</a>
+</div>
+<div class="flex items-center gap-2 md:gap-4 ml-auto md:ml-12">
+<a class="bg-indigo-vibrant text-white px-4 md:px-6 py-2 md:py-2.5 rounded-full font-label-md text-[12px] md:text-label-md hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] active:scale-95 transition-all flex items-center justify-center whitespace-nowrap" href="signup.html">Join Now</a>
+<button class="md:hidden w-10 h-10 flex items-center justify-center rounded-full glass-card hover:bg-white/10 transition-colors" id="menu-toggle">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<!-- Mobile Expandable Tray -->
+<div class="fixed inset-0 z-50 md:hidden bg-surface/95 backdrop-blur-2xl opacity-0 translate-y-full transition-all duration-500 flex flex-col items-center justify-center pointer-events-none" id="mobile-menu">
+<button class="absolute top-8 right-8 w-12 h-12 flex items-center justify-center rounded-full glass-card" id="menu-close">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="flex flex-col items-center gap-8">
+<a class="text-2xl font-display-lg text-primary" href="dashboard.html">Dashboard</a>
+<a class="text-2xl font-display-lg text-on-surface" href="#features" onclick="toggleMenu()">Features</a>
+<a class="text-2xl font-display-lg text-on-surface" href="login.html">Leaderboard</a>
+<a class="text-2xl font-display-lg text-on-surface" href="#pricing" onclick="toggleMenu()">Pricing</a>
+<a class="mt-8 bg-indigo-vibrant text-white px-10 py-4 rounded-xl font-label-md text-lg" href="signup.html">Join Now</a>
+</div>
+</div>
+<main>
+<!-- Hero Section -->
+<section class="relative min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center pt-32 md:pt-40 pb-16 md:pb-20 px-margin-mobile md:px-margin-desktop overflow-hidden">
+<div class="text-center max-w-5xl z-10 w-full">
+<div class="inline-block px-3 md:px-4 py-1 md:py-1.5 rounded-full border border-indigo-vibrant/30 bg-indigo-vibrant/10 text-indigo-vibrant font-label-md text-[9px] md:text-[11px] mb-6 md:mb-8 uppercase tracking-[0.2em] backdrop-blur-md animate-pulse">The Elite Standard</div>
+<h1 class="font-display-xl text-display-lg-mobile md:text-display-xl mb-6 md:mb-8 bg-gradient-to-b from-on-surface via-on-surface to-on-surface-variant/50 bg-clip-text text-transparent leading-tight px-2">
+                Precision is <span class="text-indigo-vibrant drop-shadow-[0_0_15px_rgba(99,102,241,0.3)]">Everything.</span>
+</h1>
+<p class="font-body-lg text-body-md md:text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10 md:mb-14 px-6 leading-relaxed">
+                Ordinary traders guess. Elites use Traders IQ. <br class="hidden md:block"/>
+                Official Ecosystem by <span class="text-on-surface font-extrabold tracking-tight">ADHIKARI OFFICIAL.</span>
+</p>
+<div class="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center px-6 w-full max-w-lg mx-auto">
+<a class="bg-indigo-vibrant hover:bg-indigo-vibrant/90 hover:scale-[1.02] active:scale-95 transition-all duration-300 px-8 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-label-md text-[16px] md:text-[18px] text-white shadow-xl shadow-indigo-vibrant/25 inline-flex items-center justify-center w-full" href="signup.html">
+                    Get Started
+                </a>
+<a class="bg-glass-surface backdrop-blur-xl border border-glass-border hover:bg-white/10 transition-all duration-300 px-8 md:px-10 py-4 md:py-5 rounded-xl md:rounded-2xl font-label-md text-[16px] md:text-[18px] text-on-surface inline-flex items-center justify-center w-full group" href="login.html">
+                    Open Terminal
+                    <span class="material-symbols-outlined ml-2 group-hover:translate-x-1 transition-transform">terminal</span>
+</a>
+</div>
+</div>
+<!-- Dashboard Preview -->
+<div class="mt-16 md:mt-24 w-full max-w-6xl mx-auto relative px-4 group">
+<div class="glass-card rounded-[24px] md:rounded-[40px] p-1.5 md:p-2 overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] border-white/5 relative aspect-video">
+<div class="absolute inset-0 bg-gradient-to-tr from-indigo-vibrant/10 to-transparent pointer-events-none"></div>
+<img alt="Trading terminal interface" class="w-full h-full rounded-[20px] md:rounded-[34px] object-cover border border-white/5 block" src="https://lh3.googleusercontent.com/aida/AP1WRLuiothLPli8Avl54wCO5nwW4XroBU6-6-yjJuq6pEBOuKiSWDmt7lnN3r3Ghz28g9u8gUMoQnMoqtIrpyEqjozI0nz-6Oh21I3hnafoHaxrHIuL8aCygOfyUewhHsPrP2rRRdqAkosJsgnnDcODtsysF-IauoFddpYT8H4ozb7YsijqDZ269F8e4-psshwCQHMKEV0kGLl-6jTXrb6ukooBvuhznEjlS-SwmYvV6T2haYgwyOSR3TZR3Pg"/>
+</div>
+<div class="absolute -top-16 -right-16 w-32 md:w-64 h-32 md:h-64 bg-indigo-vibrant/15 blur-[80px] md:blur-[120px] rounded-full pointer-events-none"></div>
+<div class="absolute -bottom-16 -left-16 w-32 md:w-64 h-32 md:h-64 bg-rose-accent/10 blur-[80px] md:blur-[120px] rounded-full pointer-events-none"></div>
+</div>
+</section>
+<!-- Bento Grid Features -->
+<section class="py-20 md:py-32 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto relative" id="features">
+<div class="circuit-overlay"></div>
+<div class="text-center mb-16 md:mb-28 px-4">
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4 md:mb-6 tracking-tight">Architected for Supremacy</h2>
+<p class="text-on-surface-variant font-body-md max-w-xl mx-auto px-2">Engineered features that bridge the gap between retail and institutional trading with high-fidelity performance metrics.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-6 gap-6 md:gap-8 px-4">
+<!-- Smart PnL Analytics -->
+<div class="glass-card rounded-[24px] md:rounded-[32px] p-8 md:p-10 md:col-span-4 relative overflow-hidden group indigo-glow transition-all duration-500 min-h-[340px] md:min-h-[380px] flex flex-col border-white/5">
+<div class="relative z-10 flex flex-col h-full justify-between">
+<div>
+<div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-vibrant/10 flex items-center justify-center mb-6 md:mb-8 border border-indigo-vibrant/20">
+<span class="material-symbols-outlined text-indigo-vibrant text-2xl md:text-3xl">insights</span>
+</div>
+<h3 class="font-headline-md text-[20px] md:text-headline-md mb-4 md:mb-6">Smart PnL Analytics</h3>
+<p class="text-on-surface-variant font-body-md max-w-md leading-relaxed text-sm md:text-base">Precision win rate tracking and trade journaling that uncovers your statistical edge. Every tick, every trade, measured for institutional-grade performance.</p>
+</div>
+<div class="mt-6 md:mt-8">
+<a class="flex items-center gap-4 text-indigo-vibrant hover:text-on-surface transition-all group/link" href="login.html">
+<span class="font-label-md tracking-wider text-[12px] md:text-sm">EXPLORE METRICS</span>
+<span class="material-symbols-outlined group-hover/link:translate-x-2 transition-transform text-lg">arrow_forward</span>
+</a>
+</div>
+</div>
+<div class="absolute right-[-10%] md:right-[-5%] bottom-[-5%] w-4/5 md:w-3/4 opacity-10 group-hover:opacity-25 transition-all duration-700 blur-[2px] group-hover:blur-0 pointer-events-none">
+<img alt="Data visualization overlay" class="w-full h-auto object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLukAgX8dsbSNm-z5BHtQXgyP8IDiLS6pXdBMPzzQx4ZRSCzXthXH66hJP832jyHSnwA9mk26NNPvY2JpVmfHfWvStJ8RSQ19VoI0wPjFtDhRtx3b3HHr_OqmE7dVr7fLY9Wg-oBw4VyEMeCHOGuL0a4LYNzLXb6fjsiX4Y59FkYUDqA4OlSKmFLc1R-F2AC7y2ijQl0cxwHktGHnjpabof4E-AIaeUN2Ql0SV5IJ0_F72iVDtHnAK_tkDs"/>
+</div>
+</div>
+<!-- Cloud Safe Sync -->
+<div class="glass-card rounded-[24px] md:rounded-[32px] p-8 md:p-10 md:col-span-2 relative overflow-hidden group indigo-glow transition-all duration-500 min-h-[340px] md:min-h-[380px] flex flex-col border-white/5">
+<div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-vibrant/10 flex items-center justify-center mb-6 md:mb-8 border border-indigo-vibrant/20">
+<span class="material-symbols-outlined text-indigo-vibrant text-2xl md:text-3xl">cloud_sync</span>
+</div>
+<h3 class="font-headline-md text-[20px] md:text-headline-md mb-4 md:mb-6">Cloud Safe Sync</h3>
+<p class="text-on-surface-variant font-body-md leading-relaxed mb-6 md:mb-8 text-sm md:text-base">Seamless Firebase-backed synchronization. Access terminal settings from any device, anywhere.</p>
+<div class="mt-auto rounded-xl md:rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-surface-container-low p-1 aspect-video">
+<img alt="Cloud Sync Visualization" class="w-full h-full object-cover rounded-lg" src="https://lh3.googleusercontent.com/aida/AP1WRLt9Aw27eU5MJPLMaVQYQmjbiF7ye-5tpw3LCegoV9ZX4ZuBGppLBWTAA59z-qQaxmA67rTF9LQ42w6wLIfZQxSCMNpug1MnwdxvSSWAdPrs90QyhmMHoP3o029g7jlqJjsq53_JN-kgK3whOtp44TYA3fmSxnvYGZuF4ER5pEFazW5717bkbMrq8EFYVrdI4hsGWXCj3W_bX-JxsAyrh22f_JqU06XArWTuENEN-PQhJtOAi4lYYkQzw3s"/>
+</div>
+</div>
+<!-- Risk Management -->
+<div class="glass-card rounded-[24px] md:rounded-[32px] p-8 md:p-10 md:col-span-2 relative overflow-hidden group indigo-glow transition-all duration-500 min-h-[340px] md:min-h-[380px] flex flex-col border-white/5">
+<div class="flex flex-col gap-6 md:gap-8 h-full">
+<div class="flex-1">
+<div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-vibrant/10 flex items-center justify-center mb-6 md:mb-8 border border-indigo-vibrant/20">
+<span class="material-symbols-outlined text-indigo-vibrant text-2xl md:text-3xl">security</span>
+</div>
+<h3 class="font-headline-md text-[20px] md:text-headline-md mb-4 md:mb-6">Risk Engine</h3>
+<p class="text-on-surface-variant font-body-md leading-relaxed text-sm md:text-base">Automated position sizing and drawdown protection protocols.</p>
+</div>
+<div class="flex justify-center relative mt-auto rounded-xl md:rounded-2xl overflow-hidden border border-white/10 bg-surface-container-low p-1 aspect-square">
+<img alt="Risk Engine Gauge" class="w-full h-full object-cover rounded-lg" src="https://lh3.googleusercontent.com/aida/AP1WRLtAwQlh4ii-MT8GyLQXrDY3pFT8MK5gXDX7DGw5aSJUKJKWcdvNOSw7uWOpVMNRHTMcnpdFbfaeRKLxlZQ9cuRk_2HrkHyZeysdtz-BO5zBiZRVfK9QETCTma0tXtSRy4h7GzP-0hoWdzI2HwNtz5Gn_qZI9Zh86tBhSv7CHBy-Rn_Sku_Ivqa0CQAnBDFN8QoSrj2fU73L5hXDXdAmpjyv5Mzo1vsUTsH6Hd1GnPrFQx9nkwi94HVWdJU"/>
+</div>
+</div>
+</div>
+<!-- Market Psychology -->
+<div class="glass-card rounded-[24px] md:rounded-[32px] p-8 md:p-10 md:col-span-4 relative overflow-hidden group indigo-glow transition-all duration-500 min-h-[340px] md:min-h-[380px] flex flex-col border-white/5">
+<div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-12 h-full">
+<div class="flex-1">
+<div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-vibrant/10 flex items-center justify-center mb-6 md:mb-8 border border-indigo-vibrant/20">
+<span class="material-symbols-outlined text-indigo-vibrant text-2xl md:text-3xl">psychology</span>
+</div>
+<h3 class="font-headline-md text-[20px] md:text-headline-md mb-4 md:mb-6">Psychology Tracker</h3>
+<p class="text-on-surface-variant font-body-md leading-relaxed mb-4 md:mb-6 text-sm md:text-base">Tools designed to master emotional discipline. Quantify FOMO and greed through behavioral pattern recognition.</p>
+</div>
+<div class="flex-1 grid grid-cols-2 gap-4 md:gap-6 w-full">
+<div class="p-6 md:p-8 bg-white/5 rounded-2xl md:rounded-3xl border border-white/10 flex flex-col justify-center items-center backdrop-blur-xl aspect-square">
+<span class="text-[9px] md:text-label-sm uppercase tracking-widest opacity-50 block mb-2 md:mb-4">Greed Index</span>
+<span class="text-xl md:text-3xl font-black text-rose-accent">Low</span>
+</div>
+<div class="p-6 md:p-8 bg-white/5 rounded-2xl md:rounded-3xl border border-white/10 flex flex-col justify-center items-center backdrop-blur-xl aspect-square">
+<span class="text-[9px] md:text-label-sm uppercase tracking-widest opacity-50 block mb-2 md:mb-4">Patience</span>
+<span class="text-xl md:text-3xl font-black text-indigo-vibrant whitespace-nowrap">Optimal</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Institutional Trade Cards -->
+<div class="glass-card rounded-[24px] md:rounded-[32px] p-8 md:p-10 md:col-span-6 relative overflow-hidden group indigo-glow transition-all duration-500 min-h-[400px] md:min-h-[420px] flex flex-col lg:flex-row items-center gap-10 lg:gap-16 border-white/5 mt-6 md:mt-8">
+<div class="flex-1 relative z-10 w-full">
+<div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-indigo-vibrant/10 flex items-center justify-center mb-6 md:mb-8 border border-indigo-vibrant/20">
+<span class="material-symbols-outlined text-indigo-vibrant text-2xl md:text-3xl">verified_user</span>
+</div>
+<h3 class="font-headline-md text-[20px] md:text-headline-md mb-4 md:mb-6">Institutional Trade Cards</h3>
+<p class="text-on-surface-variant font-body-md max-w-md leading-relaxed text-sm md:text-base">
+                        Generate cryptographically verified visual representations of your trade setups. Build an unassailable reputation with institutional-grade performance cards.
+                    </p>
+<div class="mt-8 md:mt-10">
+<a class="flex items-center gap-4 text-indigo-vibrant hover:text-on-surface transition-all group/link" href="signup.html">
+<span class="font-label-md tracking-widest text-[12px] md:text-sm">GENERATE YOUR FIRST CARD</span>
+<span class="material-symbols-outlined group-hover/link:translate-x-2 transition-transform text-lg">arrow_forward</span>
+</a>
+</div>
+</div>
+<div class="flex-1 flex justify-center relative w-full">
+<div class="w-full max-w-[320px] md:max-w-md rounded-[24px] md:rounded-[32px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] border border-indigo-vibrant/30 transform group-hover:scale-105 transition-all duration-700 relative z-10 bg-surface-container-low p-1 aspect-[16/9]">
+<img alt="Institutional Trade Card" class="w-full h-full object-cover rounded-lg" src="https://lh3.googleusercontent.com/aida/AP1WRLuZyPKzWdAzJohqzMz46t8Ewc8d4wu-xiCwYbVNWXkm9YrqrNns2A-fVW0d5gWumVW37KkvtJRFC5NPQBMnaaVt-GXehAIePQ30_t5eZpyiZvOAuWU5rhUv5x4NnqU2o7s9wlGGamNcvBrBMaGy7KmxwxsKB86CJf0Cd-03YTZiIwob-flBlYShzq0pxjGQDzr_SeqcWFYKa6vGVc4s1LNXzVTNVvMUS1d9w9PW9wHzmovEcHDNZJo762o"/>
+</div>
+<div class="absolute -inset-10 bg-indigo-vibrant/15 blur-[60px] md:blur-[100px] rounded-full -z-10 animate-pulse"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-20 md:py-32 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto relative" id="pricing">
+<div class="text-center mb-16 md:mb-28 px-4">
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4 md:mb-6 tracking-tight">Institutional Grade Access</h2>
+<p class="text-on-surface-variant font-body-md max-w-xl mx-auto px-2">Choose the tier that matches your trading ambition and scaling requirements.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 max-w-7xl mx-auto px-4 items-stretch">
+<!-- Free Tier -->
+<div class="glass-card rounded-[32px] md:rounded-[40px] p-8 md:p-10 flex flex-col group hover:bg-white/[0.03] transition-all duration-500 border-white/5 order-2 lg:order-1">
+<h3 class="font-headline-md text-[20px] md:text-headline-md mb-2">Free Tier</h3>
+<div class="text-3xl md:text-4xl font-black mb-2">$0.00<span class="text-lg font-medium text-on-surface-variant">/mo</span></div>
+<p class="text-indigo-vibrant font-label-md mb-6 md:mb-8 tracking-widest text-[12px]">CORE ESSENTIALS</p>
+<p class="text-on-surface-variant mb-8 md:mb-10 flex-grow leading-relaxed text-sm md:text-base">Experience the core terminal features and start your journey into professional trading.</p>
+<ul class="space-y-4 md:space-y-5 mb-10 md:mb-12">
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">10 Trades / month limit</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">Basic PnL Tracking</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">Global Leaderboard Access</span></li>
+</ul>
+<a class="w-full py-4 md:py-5 rounded-xl md:rounded-2xl border border-white/10 font-label-md hover:bg-white/5 transition-all text-center tracking-widest uppercase text-[12px] md:text-sm" href="signup.html">Start for Free</a>
+</div>
+<!-- Annual Plan (Featured) -->
+<div class="glass-card rounded-[32px] md:rounded-[40px] p-8 md:p-10 flex flex-col border-indigo-vibrant/50 bg-indigo-vibrant/5 relative group lg:scale-105 z-10 shadow-[0_30px_70px_-10px_rgba(99,102,241,0.2)] order-1 lg:order-2">
+<div class="absolute top-0 right-1/2 lg:right-10 translate-x-1/2 lg:translate-x-0 -translate-y-1/2 bg-indigo-vibrant text-white px-4 md:px-6 py-1.5 rounded-full text-[9px] md:text-[10px] font-black tracking-[0.2em] uppercase shadow-lg shadow-indigo-vibrant/40 whitespace-nowrap">Elite Choice</div>
+<div class="flex flex-col sm:flex-row justify-between items-start mb-2 gap-2">
+<h3 class="font-headline-md text-[20px] md:text-headline-md">Annual Plan</h3>
+<span class="bg-rose-accent text-white px-3 md:px-4 py-1 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-accent/20">SAVE 25%</span>
+</div>
+<div class="text-3xl md:text-4xl font-black mb-4 md:mb-6">$89.99<span class="text-lg font-medium text-on-surface-variant">/yr</span></div>
+<p class="text-on-surface-variant mb-8 md:mb-10 flex-grow leading-relaxed text-sm md:text-base">The complete institutional arsenal for serious traders committed to long-term compounding.</p>
+<ul class="space-y-4 md:space-y-5 mb-10 md:mb-12">
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-white text-xl">check_circle</span> <span class="font-bold text-sm md:text-base">Unlimited Trade Tracking</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-white text-xl">check_circle</span> <span class="font-bold text-sm md:text-base">Priority Cloud Sync</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-white text-xl">check_circle</span> <span class="font-bold text-sm md:text-base">Advanced Leaderboard Stats</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-white text-xl">check_circle</span> <span class="font-bold text-sm md:text-base">Deep Psychology Analysis</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-white text-xl">check_circle</span> <span class="font-bold text-sm md:text-base">Custom Trade Card Styles</span></li>
+</ul>
+<a class="w-full py-4 md:py-5 rounded-xl md:rounded-2xl bg-indigo-vibrant text-white font-label-md hover:bg-indigo-vibrant/90 transition-all text-center tracking-widest uppercase text-[12px] md:text-sm shadow-xl shadow-indigo-vibrant/30 hover:scale-[1.02]" href="signup.html">Get Started Now</a>
+</div>
+<!-- Monthly Plan -->
+<div class="glass-card rounded-[32px] md:rounded-[40px] p-8 md:p-10 flex flex-col group hover:bg-white/[0.03] transition-all duration-500 border-white/5 order-3 lg:order-3">
+<h3 class="font-headline-md text-[20px] md:text-headline-md mb-2">Monthly Plan</h3>
+<div class="text-3xl md:text-4xl font-black mb-2">$9.99<span class="text-lg font-medium text-on-surface-variant">/mo</span></div>
+<p class="text-indigo-vibrant font-label-md mb-6 md:mb-8 tracking-widest text-[12px]">FLEXIBLE ACCESS</p>
+<p class="text-on-surface-variant mb-8 md:mb-10 flex-grow leading-relaxed text-sm md:text-base">Full access to the Traders IQ terminal with flexible monthly billing and support.</p>
+<ul class="space-y-4 md:space-y-5 mb-10 md:mb-12">
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">Smart PnL Analytics</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">Cloud Safe Sync</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">Global Leaderboard</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">Market Psychology</span></li>
+<li class="flex items-center gap-3 md:gap-4"><span class="material-symbols-outlined text-indigo-vibrant text-xl">check_circle</span> <span class="font-medium text-sm md:text-base">Verified Trade Cards</span></li>
+</ul>
+<a class="w-full py-4 md:py-5 rounded-xl md:rounded-2xl border border-white/10 font-label-md hover:bg-white/5 transition-all text-center tracking-widest uppercase text-[12px] md:text-sm" href="signup.html">Select Plan</a>
+</div>
+</div>
+</section>
+<!-- Risk Disclaimer -->
+<section class="py-16 md:py-24 px-4 md:px-margin-desktop">
+<div class="max-w-4xl mx-auto p-8 md:p-14 rounded-[32px] md:rounded-[40px] border border-error/20 bg-error-container/5 backdrop-blur-3xl relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-error/5 blur-3xl rounded-full"></div>
+<div class="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8 relative z-10">
+<div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-error/10 flex items-center justify-center flex-shrink-0 border border-error/20">
+<span class="material-symbols-outlined text-error text-3xl md:text-4xl">warning</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[20px] md:text-headline-md text-error mb-4 md:mb-6 tracking-tight">Institutional Risk Disclosure</h4>
+<p class="text-on-surface-variant font-body-md leading-relaxed opacity-80 text-sm md:text-base">
+                        Trading financial instruments carries a high level of risk and may not be suitable for all investors. Traders IQ and Adhikari Official provide analytical tools only and do not constitute financial advice. Exercise extreme caution.
+                    </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full pt-20 md:pt-32 pb-12 md:pb-16 bg-surface-container-lowest/80 border-t border-white/5 backdrop-blur-xl relative">
+<div class="circuit-overlay opacity-20"></div>
+<div class="w-full px-4 md:px-margin-desktop max-w-7xl mx-auto flex flex-col gap-12 md:gap-16">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-16">
+<div class="sm:col-span-2 lg:col-span-1">
+<div class="flex items-center gap-4 mb-6 md:mb-8">
+<img alt="Traders IQ Logo" class="w-10 h-10 md:w-12 md:h-12 object-cover rounded-xl shadow-lg flex-shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8dzrdpD5yKigfbex2076Y_CH20o3aDr_4GVQTROoOoh_2WzjgIKui0QYD7L3AeBTxHT-4njTxxVWqAgi90RrghfiIgf4pQBRRiz3opxji7pE_qf5ePcCDieni8Xqu7mFQd-QiglKOee2RuaY_zONS-CCwBWLb-1XS-n8dmCFLRqU9Cdb6k6p6XGuKWjIBHptripvpjt05Eblj7HEgA_k7QU24CUdCth13hmkfC9ZXQ2Dx79kUFzRmkF32H-Q10gbO6_R0XGo1QL4"/>
+<div class="font-headline-md text-[20px] md:text-headline-md text-on-surface font-black tracking-tighter">Traders IQ</div>
+</div>
+<p class="text-on-surface-variant font-body-md leading-relaxed text-sm md:text-base">Institutional grade trading systems for the next generation of financial elites. Powered by high-fidelity data analytics.</p>
+</div>
+<div>
+<h5 class="text-on-surface font-label-md mb-6 md:mb-8 uppercase tracking-[0.2em] text-[10px] md:text-xs font-black">Legal</h5>
+<ul class="space-y-4 md:space-y-5">
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="terms.html">Terms of Service</a></li>
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="privacy.html">Privacy Policy</a></li>
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="refund.html">Refund &amp; Cancellation</a></li>
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="risk.html">Risk Disclosure</a></li>
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="shipping.html">Shipping &amp; Returns</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-on-surface font-label-md mb-6 md:mb-8 uppercase tracking-[0.2em] text-[10px] md:text-xs font-black">Resources</h5>
+<ul class="space-y-4 md:space-y-5">
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="apidoc.html">API Documentation</a></li>
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="login.html">Terminal Access</a></li>
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm" href="achievement.html">Adhikari Official</a></li>
+</ul>
+</div>
+<div>
+<h5 class="text-on-surface font-label-md mb-6 md:mb-8 uppercase tracking-[0.2em] text-[10px] md:text-xs font-black">Contact</h5>
+<ul class="space-y-4 md:space-y-5">
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm flex items-center gap-3" href="mailto:admin@tradersiq.xyz">
+<span class="material-symbols-outlined text-sm">mail</span> Contact Support
+                    </a></li>
+<li><a class="text-on-surface-variant hover:text-indigo-vibrant transition-colors font-medium text-xs md:text-sm flex items-center gap-3" href="https://www.instagram.com/traders_iq_000/?utm_source=qr&amp;r=nametag" target="_blank">
+<span class="material-symbols-outlined text-sm">share</span> Media Inquiries
+                    </a></li>
+</ul>
+</div>
+</div>
+<div class="pt-12 md:pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 md:gap-10">
+<p class="text-on-surface-variant font-body-md text-center md:text-left text-xs md:text-sm opacity-60">
+                © 2024 Traders IQ. Institutional Grade Trading Systems. All rights reserved.
+            </p>
+<div class="flex gap-8 md:gap-10">
+<a class="material-symbols-outlined text-on-surface-variant hover:text-indigo-vibrant cursor-pointer transition-all hover:scale-125 hover:rotate-12" href="index.html">public</a>
+<a class="material-symbols-outlined text-on-surface-variant hover:text-indigo-vibrant cursor-pointer transition-all hover:scale-125" href="login.html">terminal</a>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-indigo-vibrant cursor-pointer transition-colors hover:scale-125">security</span>
+</div>
+</div>
+</div>
+</footer>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script>
+    // Optimized Firebase Initialize
+    const firebaseConfig = {
+        apiKey: "AIzaSyAs-demo-key",
+        authDomain: "traders-iq-app-f5169.firebaseapp.com",
+        projectId: "traders-iq-app-f5169",
+        storageBucket: "traders-iq-app-f5169.appspot.com",
+        messagingSenderId: "demo-id",
+        appId: "1:demo:web:id"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            db.collection('users').doc(user.uid).get().then((doc) => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    if (userData.status === 'active' || userData.subscription === 'pro') {
+                        window.location.href = 'dashboard.html';
+                    }
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            }).catch(() => {
+                window.location.href = 'dashboard.html';
+            });
+        }
+    });
+
+    // Mobile Menu Toggle
+    const menuToggle = document.getElementById('menu-toggle');
+    const menuClose = document.getElementById('menu-close');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    function toggleMenu() {
+        mobileMenu.classList.toggle('active');
+        mobileMenu.classList.toggle('opacity-0');
+        mobileMenu.classList.toggle('translate-y-full');
+        document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+    }
+
+    if(menuToggle) menuToggle.addEventListener('click', toggleMenu);
+    if(menuClose) menuClose.addEventListener('click', toggleMenu);
+
+    // Mouse reveal effect for glass cards
+    document.querySelectorAll('.glass-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        });
+    });
+</script>
+</body></html>
